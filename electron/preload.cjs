@@ -45,7 +45,15 @@ contextBridge.exposeInMainWorld('api', {
   selectImage: () => ipcRenderer.invoke('dialog:select-image'),
   clipboardReadText: () => ipcRenderer.invoke('clipboard:read-text'),
   clipboardWriteText: (t) => ipcRenderer.invoke('clipboard:write-text', t),
-  // 事件
-  onMenu: (ch, cb) => { const h = (e, ...a) => cb(...a); ipcRenderer.on(ch, h); return () => ipcRenderer.removeListener(ch, h) },
-  onReload: (cb) => { const h = () => cb(); ipcRenderer.on('doc:reloaded', h); return () => ipcRenderer.removeListener('doc:reloaded', h) }
+  // ===== 单通道菜单事件 =====
+  onMenuAction: (cb) => {
+    const h = (e, action) => cb(action)
+    ipcRenderer.on('menu-action', h)
+    return () => ipcRenderer.removeListener('menu-action', h)
+  },
+  onReload: (cb) => {
+    const h = () => cb()
+    ipcRenderer.on('doc:reloaded', h)
+    return () => ipcRenderer.removeListener('doc:reloaded', h)
+  }
 })
