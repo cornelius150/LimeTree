@@ -1,766 +1,973 @@
 <template>
-  <div class="app-container" :class="{ dark: darkMode }">
-    <!-- ================= 左侧面板 ================= -->
-    <div class="tree-sidebar" v-show="showTree">
-      <div class="sidebar-title">
-        <img src="./assets/lime-icon-small.png" alt="LimeTree" class="sidebar-logo" />
-        <span class="sidebar-title-text">LimeTree</span>
-        <button class="theme-toggle" @click="toggleDark">{{ darkMode ? '☀' : '☾' }}</button>
+  <div class="lt-app">
+    <!-- ===== 树形面板 ===== -->
+    <div class="lt-tree-panel" v-show="showTree">
+      <!-- 搜索框 -->
+      <div class="lt-tree-search">
+        <input
+          v-model="treeSearchKw"
+          class="lt-tree-search-input"
+          placeholder="搜索节点..."
+          @keydown.enter="doTreeSearch"
+        />
+        <button class="lt-tree-search-btn" @click="doTreeSearch" title="搜索">🔍</button>
       </div>
-      <div class="search-bar">
-        <input v-model="searchKw" type="text" placeholder="搜索笔记..." @input="onSearch" ref="searchInput" />
-        <button v-if="searchKw" class="search-clear" @click="clearSearch">✕</button>
-      </div>
-      <div v-if="searchResults.length > 0" class="search-results">
-        <div class="search-results-header">找到 {{ searchResults.length }} 个结果</div>
-        <div v-for="r in searchResults" :key="r.id" class="search-result-item" @click="onSearchClick(r)">
-          <span class="search-result-icon">{{ r.icon || '📄' }}</span>
-          <div>
-            <div class="search-result-name">{{ r.name }}</div>
-            <div v-if="r.snippet" class="search-result-snippet">{{ r.snippet }}</div>
-          </div>
-        </div>
-      </div>
-      <template v-else>
-        <div class="sidebar-header">
-          <button @click="addRoot" title="添加根节点">+ 根节点</button>
-          <button @click="addChild" :disabled="!selectedId" title="添加子节点">+ 子节点</button>
-        </div>
-        <div class="tree-container" @keydown="onTreeKey" tabindex="0" ref="treeContainer">
-          <TreeItem v-for="n in rootNodes" :key="n.id" :node="n" :all-nodes="allNodes"
-            :selected-id="selectedId" :level="0" :expanded-set="expandedSet"
-            @select="onSelect" @delete="onDelete" @rename="onRename" @toggle="onToggle" @move="onMove" />
-        </div>
-        <!-- 书签区 -->
-        <div v-if="bookmarks.length > 0" class="bookmarks-section">
-          <div class="bookmarks-header">书签</div>
-          <div v-for="b in bookmarks" :key="b.id" class="bookmark-item" @click="gotoBookmark(b)">
-            <span class="bm-icon">{{ b.icon || '📄' }}</span>
-            <span class="bm-name">{{ b.name }}</span>
-          </div>
-        </div>
-      </template>
-    </div>
 
-    <!-- ================= 右侧编辑区 ================= -->
-    <div class="right-panel">
-      <NoteEditor v-if="selectedNode" :key="selectedNode.id" :node="selectedNode"
-        :show-toolbar="showToolbar" :wrap-line="wrapLine" :show-ln="showLn" :show-ws="showWs" :show-le="showLe"
-        @save="onSave" @app-menu="handleMenu" />
-      <div v-else class="empty-state">
-        <div style="text-align:center">
-          <img src="./assets/lime-icon.png" alt="LimeTree" style="width:96px;height:96px;opacity:0.7" />
-          <p style="margin-top:12px;font-size:18px;color:#999">LimeTree 笔记本</p>
-        </div>
+      <!-- 树 -->
+      <div class="lt-tree-list">
+        <template v-for="node in rootNodes" :key="node.id">
+          <TreeItem
+            :node="node"
+            :allNodes="allNodes"
+            :activeId="activeId"
+            :expandedSet="expandedSet"
+            @select="onSelectNode"
+            @toggle-expand="onToggleExpand"
+            @rename="onRenameNode"
+            @context-menu="onTreeContextMenu"
+            @drag-start="onDragStart"
+            @drag-end="onDragEnd"
+            @drop-node="onDropNode"
+          />
+        </template>
+        <div v-if="rootNodes.length === 0" class="lt-tree-empty">暂无节点，按 Ctrl+N 添加</div>
       </div>
-      <div class="status-bar" v-if="selectedNode">
-        <span>{{ (selectedNode.content || '').length }} 字符</span>
-        <span>{{ selectedNode.name || '' }}</span>
-        <span style="margin-left:auto">{{ saveStatus }}</span>
-      </div>
-    </div>
 
-    <!-- ================= 树右键菜单 ================= -->
-    <div v-if="menuVisible" class="ctx-menu" :style="{ left: menuX+'px', top: menuY+'px' }" @click.stop>
-      <div class="ctx-item" @click="mAct('add-child')">添加子节点</div>
-      <div class="ctx-item" @click="mAct('add-sibling')">添加同级</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="mAct('rename')">重命名</div>
-      <div class="ctx-item" @click="mAct('node-icon')">更改节点图标</div>
-      <div class="ctx-item" @click="mAct('node-color')">更改高亮颜色</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="mAct('node-up')">上移节点</div>
-      <div class="ctx-item" @click="mAct('node-down')">下移节点</div>
-      <div class="ctx-item" @click="mAct('dup-node')">重复节点</div>
-      <div class="ctx-item" @click="mAct('copy-node')">复制节点</div>
-      <div class="ctx-item" @click="mAct('cut-node')">剪切节点</div>
-      <div class="ctx-item" @click="mAct('paste-node')" :class="{disabled: !hasNodeClip}">粘贴节点</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="mAct('sort-children')">排序节点</div>
-      <div class="ctx-item" @click="mAct('expand-all')">展开全部</div>
-      <div class="ctx-item" @click="mAct('collapse-all')">折叠全部</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="mAct('bm-add')">添加节点到书签</div>
-      <div class="ctx-item" @click="mAct('bm-remove')">从书签中删除节点</div>
-      <div class="ctx-item" @click="mAct('node-info')">节点信息</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="mAct('exp-html')">导出为 HTML</div>
-      <div class="ctx-item" @click="mAct('exp-txt')">导出为纯文本</div>
-      <div class="ctx-item" @click="mAct('exp-pdf')">导出为 PDF</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item danger" @click="mAct('delete')" v-if="menuNodeId !== rootNodes[0]?.id">删除节点</div>
-    </div>
-
-    <!-- ================= 节点信息对话框 ================= -->
-    <div v-if="infoDlg" class="modal-overlay" @click.self="infoDlg = false">
-      <div class="modal-dialog">
-        <div class="modal-title">节点信息</div>
-        <div class="modal-body" v-if="nodeInfo">
-          <div class="info-row"><span>ID:</span><strong>{{ nodeInfo.id }}</strong></div>
-          <div class="info-row"><span>名称:</span><strong>{{ nodeInfo.name }}</strong></div>
-          <div class="info-row"><span>图标:</span><strong>{{ nodeInfo.icon }}</strong></div>
-          <div class="info-row"><span>创建时间:</span><strong>{{ nodeInfo.created }}</strong></div>
-          <div class="info-row"><span>修改时间:</span><strong>{{ nodeInfo.updated }}</strong></div>
-          <div class="info-row"><span>字符数:</span><strong>{{ nodeInfo.chars }}</strong></div>
-          <div class="info-row"><span>单词数:</span><strong>{{ nodeInfo.words }}</strong></div>
-          <div class="info-row"><span>子节点数:</span><strong>{{ nodeInfo.children }}</strong></div>
-        </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-ok" @click="infoDlg = false">关闭</button>
+      <!-- 书签区 -->
+      <div class="lt-bookmarks" v-if="bookmarks.length > 0">
+        <div class="lt-bookmarks-title">书签</div>
+        <div
+          v-for="bm in bookmarks"
+          :key="bm.id"
+          class="lt-bookmark-item"
+          @click="onSelectNode({ id: bm.id, name: bm.name, icon: bm.icon })"
+        >
+          <span class="lt-bm-icon">{{ bm.icon || '📌' }}</span>
+          <span class="lt-bm-name">{{ bm.name }}</span>
         </div>
       </div>
     </div>
 
-    <!-- ================= 更改 ID 对话框 ================= -->
-    <div v-if="idDlg" class="modal-overlay" @click.self="idDlg = false">
-      <div class="modal-dialog">
-        <div class="modal-title">更改节点 ID</div>
-        <div class="modal-body">
-          <div class="modal-field"><label>新 ID</label><input type="number" v-model.number="newId" /></div>
+    <!-- ===== 拖拽分隔条 ===== -->
+    <div class="lt-splitter" @mousedown="startSplitDrag" v-show="showTree"></div>
+
+    <!-- ===== 编辑区 ===== -->
+    <div class="lt-editor-panel">
+      <div class="lt-editor-header" v-show="showNodeNameHead">
+        <span class="lt-editor-header-icon">{{ currentNode?.icon || '' }}</span>
+        <span class="lt-editor-header-name">{{ currentNode?.name || 'LimeTree' }}</span>
+      </div>
+      <NoteEditor
+        ref="editorRef"
+        :content="currentContent"
+        @editor-menu="onEditorMenuFromChild"
+        @save-content="onSaveContent"
+      />
+    </div>
+
+    <!-- ===== 树右键菜单 ===== -->
+    <div v-if="showTreeMenu" class="lt-context-menu" :style="{ left: treeMenuX + 'px', top: treeMenuY + 'px' }" @click.stop>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('tree_add_subnode')">添加子节点</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('tree_add_node')">添加同级节点</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('tree_node_prop')">重命名</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('change_icon')">更改图标</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('change_color')">更改颜色</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('tree_node_up')">上移</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('tree_node_down')">下移</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('copy_node')">复制</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('cut_node')">剪切</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('paste_node')">粘贴</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('tree_sibl_sort_asc')">排序子节点(升序)</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('nodes_all_expand')">展开全部</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('nodes_all_collapse')">折叠全部</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('node_bookmark')">添加到书签</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('node_unbookmark')">从书签删除</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('export_txt')">导出为文本</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('export_html')">导出为 HTML</div>
+      <div class="lt-ctx-item" @click.stop="treeMenuAction('export_pdf')">导出为 PDF</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item lt-ctx-danger" @click.stop="treeMenuAction('tree_node_del')">删除节点</div>
+    </div>
+
+    <!-- ===== 全局搜索对话框 ===== -->
+    <div v-if="showSearchDialog" class="lt-modal-overlay" @click="showSearchDialog=false">
+      <div class="lt-search-dialog" @click.stop>
+        <div class="lt-search-dialog-title">在所有节点中查找</div>
+        <div class="lt-search-dialog-body">
+          <div class="lt-search-row">
+            <input v-model="searchKw" class="lt-search-input" placeholder="搜索内容..." @keydown.enter="doSearchAll" />
+          </div>
+          <div class="lt-search-options">
+            <label class="lt-search-opt"><input type="checkbox" v-model="searchCaseSensitive" /> 区分大小写</label>
+            <label class="lt-search-opt"><input type="checkbox" v-model="searchWholeWord" /> 完整单词</label>
+            <label class="lt-search-opt"><input type="checkbox" v-model="searchRegex" /> 正则表达式</label>
+            <label class="lt-search-opt"><input type="checkbox" v-model="searchMultiWord" /> 多词匹配</label>
+          </div>
+          <div class="lt-search-row">
+            <label>搜索方向:
+              <select v-model="searchDirection" class="lt-search-select">
+                <option value="forward">向前</option>
+                <option value="backward">向后</option>
+              </select>
+            </label>
+            <label>搜索范围:
+              <select v-model="searchScope" class="lt-search-select">
+                <option value="all">所有节点</option>
+                <option value="content">节点内容</option>
+                <option value="name">节点名称</option>
+              </select>
+            </label>
+          </div>
+          <div class="lt-search-row">
+            <label>时间筛选:
+              <select v-model="searchTimeFilter" class="lt-search-select">
+                <option value="">无</option>
+                <option value="today">今天</option>
+                <option value="week">本周</option>
+                <option value="month">本月</option>
+              </select>
+            </label>
+          </div>
+          <div class="lt-search-results" v-if="searchResults.length > 0">
+            <div
+              v-for="r in searchResults"
+              :key="r.id"
+              class="lt-search-result-item"
+              @click="jumpToSearchResult(r)"
+            >
+              <span class="lt-sr-icon">{{ r.icon || '📄' }}</span>
+              <span class="lt-sr-name">{{ r.name }}</span>
+              <span class="lt-sr-snippet">{{ r.snippet }}</span>
+            </div>
+          </div>
+          <div class="lt-search-empty" v-else-if="searchDone && searchResults.length === 0">未找到匹配结果</div>
         </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" @click="idDlg = false">取消</button>
-          <button class="modal-btn modal-btn-ok" @click="confirmChangeId">确定</button>
+        <div class="lt-search-dialog-footer">
+          <button class="lt-modal-btn" @click="showSearchDialog=false">取消</button>
+          <button class="lt-modal-btn lt-modal-btn-primary" @click="doSearchAll">确定</button>
         </div>
       </div>
     </div>
 
-    <!-- ================= 图标选择对话框 ================= -->
-    <div v-if="iconDlg" class="modal-overlay" @click.self="iconDlg = false">
-      <div class="modal-dialog" style="max-width:420px">
-        <div class="modal-title">更改节点图标</div>
-        <div class="icon-grid">
-          <span v-for="ic in iconList" :key="ic" class="icon-pick" @click="pickIcon(ic)">{{ ic }}</span>
+    <!-- ===== 设置对话框 ===== -->
+    <div v-if="showSettingsDialog" class="lt-modal-overlay" @click="showSettingsDialog=false">
+      <div class="lt-settings-dialog" @click.stop>
+        <div class="lt-settings-sidebar">
+          <div class="lt-settings-nav-item" :class="{active: settingsTab==='general'}" @click="settingsTab='general'">常规</div>
+          <div class="lt-settings-nav-item" :class="{active: settingsTab==='editor'}" @click="settingsTab='editor'">编辑器</div>
+          <div class="lt-settings-nav-item" :class="{active: settingsTab==='tree'}" @click="settingsTab='tree'">树型</div>
+          <div class="lt-settings-nav-item" :class="{active: settingsTab==='font'}" @click="settingsTab='font'">字体</div>
+          <div class="lt-settings-nav-item" :class="{active: settingsTab==='theme'}" @click="settingsTab='theme'">主题</div>
+          <div class="lt-settings-nav-item" :class="{active: settingsTab==='export'}" @click="settingsTab='export'">导出</div>
         </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" @click="iconDlg = false">取消</button>
+        <div class="lt-settings-content">
+          <div v-if="settingsTab==='general'" class="lt-settings-section">
+            <h3>常规设置</h3>
+            <label class="lt-settings-item"><input type="checkbox" v-model="settings.showTreeOnStart" /> 启动时显示树面板</label>
+            <label class="lt-settings-item"><input type="checkbox" v-model="settings.autoSave" /> 自动保存</label>
+            <label class="lt-settings-item"><input type="checkbox" v-model="settings.showStatusbar" /> 显示状态栏</label>
+          </div>
+          <div v-if="settingsTab==='editor'" class="lt-settings-section">
+            <h3>编辑器设置</h3>
+            <label class="lt-settings-item">默认字体:
+              <select v-model="settings.editorFont" class="lt-settings-select">
+                <option>Microsoft YaHei</option><option>SimSun</option><option>SimHei</option>
+                <option>KaiTi</option><option>Consolas</option><option>Arial</option>
+              </select>
+            </label>
+            <label class="lt-settings-item">默认字号:
+              <input type="number" v-model.number="settings.editorFontSize" min="8" max="48" class="lt-settings-input" />
+            </label>
+            <label class="lt-settings-item"><input type="checkbox" v-model="settings.spellcheck" /> 拼写检查</label>
+          </div>
+          <div v-if="settingsTab==='tree'" class="lt-settings-section">
+            <h3>树型设置</h3>
+            <label class="lt-settings-item"><input type="checkbox" v-model="settings.showTreeLines" /> 显示树线</label>
+            <label class="lt-settings-item"><input type="checkbox" v-model="settings.expandOnStart" /> 启动时展开所有节点</label>
+          </div>
+          <div v-if="settingsTab==='font'" class="lt-settings-section">
+            <h3>字体设置</h3>
+            <label class="lt-settings-item">编辑区字体:
+              <select v-model="settings.contentFont" class="lt-settings-select">
+                <option>Microsoft YaHei</option><option>SimSun</option><option>SimHei</option>
+                <option>KaiTi</option><option>Consolas</option>
+              </select>
+            </label>
+            <label class="lt-settings-item">行高:
+              <input type="number" v-model.number="settings.lineHeight" min="1" max="3" step="0.1" class="lt-settings-input" />
+            </label>
+          </div>
+          <div v-if="settingsTab==='theme'" class="lt-settings-section">
+            <h3>主题</h3>
+            <label class="lt-settings-item"><input type="radio" v-model="settings.theme" value="light" /> 浅色</label>
+            <label class="lt-settings-item"><input type="radio" v-model="settings.theme" value="dark" /> 深色</label>
+          </div>
+          <div v-if="settingsTab==='export'" class="lt-settings-section">
+            <h3>导出设置</h3>
+            <label class="lt-settings-item">默认导出格式:
+              <select v-model="settings.exportFormat" class="lt-settings-select">
+                <option value="pdf">PDF</option><option value="html">HTML</option><option value="txt">TXT</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="lt-settings-footer">
+          <button class="lt-modal-btn" @click="showSettingsDialog=false">关闭</button>
         </div>
       </div>
     </div>
 
-    <!-- ================= 颜色选择对话框 ================= -->
-    <div v-if="colorDlg" class="modal-overlay" @click.self="colorDlg = false">
-      <div class="modal-dialog">
-        <div class="modal-title">更改高亮颜色</div>
-        <div class="color-grid">
-          <span v-for="c in hlColors" :key="c" class="color-pick" :style="{ background: c }" @click="pickColor(c)"></span>
+    <!-- ===== 节点信息对话框 ===== -->
+    <div v-if="showNodeInfoDialog" class="lt-modal-overlay" @click="showNodeInfoDialog=false">
+      <div class="lt-modal" @click.stop>
+        <div class="lt-modal-title">节点信息</div>
+        <div class="lt-modal-body">
+          <div class="lt-info-row"><label>节点 ID:</label> <span>{{ nodeInfoData?.id }}</span></div>
+          <div class="lt-info-row"><label>名称:</label> <span>{{ nodeInfoData?.name }}</span></div>
+          <div class="lt-info-row"><label>图标:</label> <span>{{ nodeInfoData?.icon }}</span></div>
+          <div class="lt-info-row"><label>创建时间:</label> <span>{{ nodeInfoData?.created }}</span></div>
+          <div class="lt-info-row"><label>更新时间:</label> <span>{{ nodeInfoData?.updated }}</span></div>
+          <div class="lt-info-row"><label>字符数:</label> <span>{{ nodeInfoData?.chars }}</span></div>
+          <div class="lt-info-row"><label>单词数:</label> <span>{{ nodeInfoData?.words }}</span></div>
+          <div class="lt-info-row"><label>子节点数:</label> <span>{{ nodeInfoData?.children }}</span></div>
         </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" @click="colorDlg = false">无颜色</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================= 书签管理对话框 ================= -->
-    <div v-if="bmDlg" class="modal-overlay" @click.self="bmDlg = false">
-      <div class="modal-dialog">
-        <div class="modal-title">处理书签</div>
-        <div class="modal-body">
-          <div v-for="(b, i) in bmEditList" :key="b.id" class="bm-edit-item">
-            <span>{{ b.icon || '📄' }} {{ b.name }}</span>
-            <button class="bm-btn" @click="bmMove(b.id, -1)" :disabled="i===0">↑</button>
-            <button class="bm-btn" @click="bmMove(b.id, 1)" :disabled="i===bmEditList.length-1">↓</button>
-            <button class="bm-btn danger" @click="bmRemove(b.id)">✕</button>
-          </div>
-          <div v-if="bmEditList.length === 0" style="text-align:center;color:#999;padding:20px">暂无书签</div>
-        </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-ok" @click="bmDlg = false">关闭</button>
+        <div class="lt-modal-footer">
+          <button class="lt-modal-btn" @click="showNodeInfoDialog=false">关闭</button>
         </div>
       </div>
     </div>
 
-    <!-- ================= 搜索对话框（按 CherryTree 截图布局） ================= -->
-    <div v-if="searchDlg" class="modal-overlay" @click.self="searchDlg = false">
-      <div class="modal-dialog search-dialog">
-        <div class="search-dlg-header">
-          <img src="./assets/lime-icon-small.png" alt="LimeTree" class="settings-logo" />
-          <span class="settings-title-text">在多个节点中搜索</span>
-          <button class="settings-close-btn" @click="searchDlg = false">✕</button>
-        </div>
-        <div class="search-dlg-body">
-          <!-- 查找输入框 -->
-          <div class="search-dlg-section">
-            <label class="search-dlg-label">查找</label>
-            <div class="search-dlg-input-row">
-              <input type="text" v-model="searchAllKw" placeholder="" class="search-dlg-input" ref="searchAllInput" @keyup.enter="execSearchAll" />
-              <button class="search-dlg-clear" @click="searchAllKw = ''" title="清空">🧹</button>
-              <button class="search-dlg-history" title="历史搜索">▼</button>
-            </div>
-          </div>
-          <!-- 搜索选项 -->
-          <div class="search-dlg-section">
-            <div class="search-dlg-section-title">搜索选项</div>
-            <div class="search-dlg-cols">
-              <div class="search-dlg-col">
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchMatchCase" /> 匹配大小写</label>
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchWholeWord" /> 完整单词</label>
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchNoAccent" /> 不区分重音</label>
-              </div>
-              <div class="search-dlg-col">
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchRegex" /> 正则表达式</label>
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchWordStart" /> 单词开始部分</label>
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchOverrideExclude" /> 覆盖排除项</label>
-              </div>
-            </div>
-            <!-- 多词匹配 -->
-            <div class="search-dlg-radio-group">
-              <div class="search-dlg-radio-col">
-                <label class="search-dlg-radio"><input type="radio" v-model="searchMultiWord" value="exact" /> 更多词语，精确匹配</label>
-              </div>
-              <div class="search-dlg-radio-col">
-                <label class="search-dlg-radio"><input type="radio" v-model="searchMultiWord" value="ignore-order" /> 更多词语，忽略顺序</label>
-                <label class="search-dlg-radio"><input type="radio" v-model="searchMultiWord" value="any" /> 更多词语，匹配任意</label>
-              </div>
-            </div>
-            <!-- 搜索方向 -->
-            <div class="search-dlg-radio-group">
-              <div class="search-dlg-radio-col">
-                <label class="search-dlg-radio"><input type="radio" v-model="searchDirection" value="forward" /> 向前</label>
-              </div>
-              <div class="search-dlg-radio-col">
-                <label class="search-dlg-radio"><input type="radio" v-model="searchDirection" value="backward" /> 向后</label>
-              </div>
-            </div>
-            <!-- 搜索范围 -->
-            <div class="search-dlg-radio-group">
-              <div class="search-dlg-radio-col">
-                <label class="search-dlg-radio"><input type="radio" v-model="searchScope" value="all" /> 所有，并列出匹配</label>
-              </div>
-              <div class="search-dlg-radio-col">
-                <label class="search-dlg-radio"><input type="radio" v-model="searchScope" value="selected" /> 在所选中搜索</label>
-                <label class="search-dlg-radio"><input type="radio" v-model="searchScope" value="current" /> 在当前页搜索</label>
-              </div>
-            </div>
-          </div>
-          <!-- 时间筛选器 -->
-          <div class="search-dlg-section">
-            <div class="search-dlg-section-title">时间筛选器</div>
-            <div class="search-dlg-cols">
-              <div class="search-dlg-col">
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchAfterCreated" /> 在此之后创建的节点</label>
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchAfterModified" /> 在此之后修改的节点</label>
-              </div>
-              <div class="search-dlg-col">
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchBeforeCreated" /> 在此之前创建的节点</label>
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchBeforeModified" /> 在此之前修改的节点</label>
-              </div>
-            </div>
-          </div>
-          <!-- 搜索范围补充 -->
-          <div class="search-dlg-section">
-            <div class="search-dlg-cols">
-              <div class="search-dlg-col">
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchInContent" /> 节点内容</label>
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchOnlySelected" /> 仅已选择的节点及其子节点</label>
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchShowLoop" /> 显示循环搜索/替换对话框</label>
-              </div>
-              <div class="search-dlg-col">
-                <label class="search-dlg-check"><input type="checkbox" v-model="searchInName" /> 节点名和标签</label>
-              </div>
-            </div>
-          </div>
-          <!-- 搜索结果 -->
-          <div v-if="searchAllResults.length > 0" class="search-dlg-results">
-            <div class="search-dlg-results-header">找到 {{ searchAllResults.length }} 个结果</div>
-            <div class="search-dlg-results-list">
-              <div v-for="r in searchAllResults" :key="r.id" class="search-dlg-result-item" @click="onSearchResultClick(r)">
-                <span class="search-dlg-result-icon">{{ r.icon || '📄' }}</span>
-                <div>
-                  <div class="search-dlg-result-name">{{ r.name }}</div>
-                  <div v-if="r.snippet" class="search-dlg-result-snippet">{{ r.snippet }}</div>
-                </div>
-              </div>
-            </div>
+    <!-- ===== 图标选择对话框 ===== -->
+    <div v-if="showIconDialog" class="lt-modal-overlay" @click="showIconDialog=false">
+      <div class="lt-modal" @click.stop>
+        <div class="lt-modal-title">选择图标</div>
+        <div class="lt-modal-body">
+          <div class="lt-icon-grid">
+            <span
+              v-for="icon in iconList"
+              :key="icon"
+              class="lt-icon-cell"
+              :class="{ 'lt-icon-selected': iconPickerValue === icon }"
+              @click.stop="iconPickerValue = icon"
+            >{{ icon }}</span>
           </div>
         </div>
-        <div class="search-dlg-footer">
-          <button class="modal-btn modal-btn-cancel" @click="searchDlg = false"><span style="margin-right:4px">✕</span>取消(C)</button>
-          <button class="modal-btn modal-btn-ok" @click="execSearchAll"><span style="margin-right:4px">→</span>确定(O)</button>
+        <div class="lt-modal-footer">
+          <button class="lt-modal-btn" @click="showIconDialog=false">取消</button>
+          <button class="lt-modal-btn lt-modal-btn-primary" @click="confirmIcon">确定</button>
         </div>
       </div>
     </div>
 
-    <!-- ================= 设置对话框 ================= -->
-    <div v-if="settingsDlg" class="modal-overlay" @click.self="settingsDlg = false">
-      <div class="modal-dialog settings-dialog">
-        <div class="settings-header">
-          <img src="./assets/lime-icon-small.png" alt="LimeTree" class="settings-logo" />
-          <span class="settings-title-text">设置</span>
-          <button class="settings-close-btn" @click="settingsDlg = false">✕</button>
-        </div>
-        <div class="settings-body">
-          <div class="settings-sidebar">
-            <div class="settings-cat" :class="{active: settingsTab==='text-code'}" @click="settingsTab='text-code'">纯文本和代码</div>
-            <div class="settings-cat" :class="{active: settingsTab==='rich'}" @click="settingsTab='rich'">富文本</div>
-            <div class="settings-cat" :class="{active: settingsTab==='format'}" @click="settingsTab='format'">格式化</div>
-            <div class="settings-cat" :class="{active: settingsTab==='special'}" @click="settingsTab='special'">特殊字符</div>
-            <div class="settings-cat-group">树型资源管理器</div>
-            <div class="settings-cat sub" :class="{active: settingsTab==='theme'}" @click="settingsTab='theme'">主题</div>
-            <div class="settings-cat sub" :class="{active: settingsTab==='interface'}" @click="settingsTab='interface'">界面</div>
-            <div class="settings-cat sub" :class="{active: settingsTab==='links'}" @click="settingsTab='links'">链接</div>
-            <div class="settings-cat sub" :class="{active: settingsTab==='toolbar'}" @click="settingsTab='toolbar'">工具栏</div>
-            <div class="settings-cat sub" :class="{active: settingsTab==='shortcuts'}" @click="settingsTab='shortcuts'">快捷键</div>
-            <div class="settings-cat sub" :class="{active: settingsTab==='misc'}" @click="settingsTab='misc'">杂项</div>
+    <!-- ===== 颜色选择对话框 ===== -->
+    <div v-if="showColorDialog" class="lt-modal-overlay" @click="showColorDialog=false">
+      <div class="lt-modal" @click.stop>
+        <div class="lt-modal-title">选择颜色</div>
+        <div class="lt-modal-body">
+          <div class="lt-color-grid">
+            <div
+              v-for="c in colorList"
+              :key="c"
+              class="lt-color-cell"
+              :style="{ background: c === 'transparent' ? 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 50% / 8px 8px' : c }"
+              @click.stop="colorPickerValue = c"
+            ></div>
           </div>
-          <div class="settings-content">
-            <!-- 纯文本和代码 -->
-            <div v-if="settingsTab==='text-code'">
-              <div class="settings-section-title">树型资源管理器</div>
-              <label class="settings-radio"><input type="radio" v-model="settings.textCodeScheme" value="light" /> 浅色背景，深色文字</label>
-              <label class="settings-radio"><input type="radio" v-model="settings.textCodeScheme" value="dark" /> 深色背景，浅色文字</label>
-              <label class="settings-radio"><input type="radio" v-model="settings.textCodeScheme" value="custom" /> 自定义背景</label>
-              <div v-if="settings.textCodeScheme==='custom'" class="settings-color-row">
-                <div class="settings-color-item"><span>文字颜色</span><input type="color" v-model="settings.tcFgColor" /></div>
-                <div class="settings-color-item"><span>背景颜色</span><input type="color" v-model="settings.tcBgColor" /></div>
-                <div class="settings-color-item"><span>选中背景</span><input type="color" v-model="settings.tcSelBg" /></div>
-              </div>
-              <div class="settings-section-title" style="margin-top:16px">样式方案</div>
-              <div class="settings-field"><label>纯文本</label><select v-model="settings.plainStyle" class="settings-select"><option value="default">默认</option><option value="solarized-light">Solarized Light</option><option value="solarized-dark">Solarized Dark</option><option value="monokai">Monokai</option></select></div>
-              <div class="settings-field"><label>编码</label><select v-model="settings.codeStyle" class="settings-select"><option value="default">默认</option><option value="kate">Kate</option><option value="cobalt-darkened">Cobalt Dark</option><option value="monokai">Monokai</option></select></div>
-            </div>
-            <!-- 富文本 -->
-            <div v-if="settingsTab==='rich'">
-              <div class="settings-section-title">树型资源管理器</div>
-              <label class="settings-radio"><input type="radio" v-model="settings.richScheme" value="light" /> 浅色背景，深色文字</label>
-              <label class="settings-radio"><input type="radio" v-model="settings.richScheme" value="dark" /> 深色背景，浅色文字</label>
-              <label class="settings-radio"><input type="radio" v-model="settings.richScheme" value="custom" /> 自定义背景</label>
-              <div v-if="settings.richScheme==='custom'" class="settings-color-row">
-                <div class="settings-color-item"><span>普通文字颜色</span><input type="color" v-model="settings.richFgColor" /></div>
-                <div class="settings-color-item"><span>选中区域背景</span><input type="color" v-model="settings.richSelBg" /></div>
-                <div class="settings-color-item"><span>选中区域文字</span><input type="color" v-model="settings.richSelFg" /></div>
-              </div>
-              <div class="settings-section-title" style="margin-top:16px">样式方案</div>
-              <div class="settings-field"><label>富文本</label><select v-model="settings.richStyle" class="settings-select"><option value="default">默认</option><option value="solarized-light">Solarized Light</option><option value="amy">Amy</option></select></div>
-              <div class="settings-section-title" style="margin-top:16px">样式方案编辑器</div>
-              <div class="settings-tabs"><span class="settings-tab" :class="{active: settings.userTab==='user-1'}" @click="settings.userTab='user-1'">user-1</span><span class="settings-tab" :class="{active: settings.userTab==='user-2'}" @click="settings.userTab='user-2'">user-2</span></div>
-              <div class="settings-color-grid">
-                <div class="settings-color-item"><span>文本前景</span><input type="color" v-model="settings.styleFg" /></div>
-                <div class="settings-color-item"><span>文本背景</span><input type="color" v-model="settings.styleBg" /></div>
-                <div class="settings-color-item"><span>选择前景</span><input type="color" v-model="settings.styleSelFg" /></div>
-                <div class="settings-color-item"><span>选择背景</span><input type="color" v-model="settings.styleSelBg" /></div>
-                <div class="settings-color-item"><span>光标</span><input type="color" v-model="settings.styleCursor" /></div>
-                <div class="settings-color-item"><span>当前行背景</span><input type="color" v-model="settings.styleCurLine" /></div>
-                <div class="settings-color-item"><span>行号前景</span><input type="color" v-model="settings.styleLnFg" /></div>
-                <div class="settings-color-item"><span>行号背景</span><input type="color" v-model="settings.styleLnBg" /></div>
-              </div>
-              <div class="settings-section-title" style="margin-top:16px">图标主题</div>
-              <div class="settings-icon-theme">
-                <button class="settings-icon-btn" :class="{active: settings.iconTheme==='dark'}" @click="settings.iconTheme='dark'">深色主题图标</button>
-                <button class="settings-icon-btn" :class="{active: settings.iconTheme==='light'}" @click="settings.iconTheme='light'">浅色主题图标</button>
-                <button class="settings-icon-btn" :class="{active: settings.iconTheme==='system'}" @click="settings.iconTheme='system'">系统默认图标</button>
-              </div>
-            </div>
-            <!-- 格式化 -->
-            <div v-if="settingsTab==='format'">
-              <div class="settings-section-title">格式化选项</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.fmtShowLineNumbers" /> 显示行号</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.fmtWordWrap" /> 自动换行</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.fmtShowWhitespace" /> 显示空白字符</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.fmtShowLineEndings" /> 显示行结尾字符</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.fmtAutoIndent" /> 自动缩进</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.fmtSmartIndent" /> 智能缩进</label>
-              <div class="settings-section-title" style="margin-top:16px">制表符</div>
-              <div class="settings-field"><label>制表符宽度</label><select v-model="settings.tabWidth" class="settings-select"><option value="2">2 空格</option><option value="4">4 空格</option><option value="8">8 空格</option></select></div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.useSpaces" /> 用空格代替制表符</label>
-            </div>
-            <!-- 特殊字符 -->
-            <div v-if="settingsTab==='special'">
-              <div class="settings-section-title">特殊字符替换</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.autoReplace" /> 自动替换特殊字符</label>
-              <div class="settings-field"><label>替换规则</label></div>
-              <div class="settings-replace-list">
-                <div class="settings-replace-item" v-for="(r, i) in settings.replaceRules" :key="i"><input type="text" v-model="r.from" placeholder="原始字符" class="settings-input" /><span>→</span><input type="text" v-model="r.to" placeholder="替换为" class="settings-input" /></div>
-              </div>
-              <button class="settings-add-btn" @click="settings.replaceRules.push({from:'',to:''})">+ 添加规则</button>
-            </div>
-            <!-- 主题 -->
-            <div v-if="settingsTab==='theme'">
-              <div class="settings-section-title">界面主题</div>
-              <label class="settings-radio"><input type="radio" v-model="settings.theme" value="light" /> 浅色主题</label>
-              <label class="settings-radio"><input type="radio" v-model="settings.theme" value="dark" /> 深色主题</label>
-              <label class="settings-radio"><input type="radio" v-model="settings.theme" value="system" /> 跟随系统</label>
-              <div class="settings-section-title" style="margin-top:16px">配色方案</div>
-              <div class="settings-color-row">
-                <div class="settings-color-item"><span>侧边栏背景</span><input type="color" v-model="settings.uiSidebarBg" /></div>
-                <div class="settings-color-item"><span>编辑区背景</span><input type="color" v-model="settings.uiEditorBg" /></div>
-                <div class="settings-color-item"><span>工具栏背景</span><input type="color" v-model="settings.uiToolbarBg" /></div>
-                <div class="settings-color-item"><span>节点选中色</span><input type="color" v-model="settings.uiSelColor" /></div>
-                <div class="settings-color-item"><span>强调色</span><input type="color" v-model="settings.uiAccent" /></div>
-              </div>
-            </div>
-            <!-- 界面 -->
-            <div v-if="settingsTab==='interface'">
-              <div class="settings-section-title">界面设置</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.showToolbar" /> 显示工具栏</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.showTree" /> 显示树状视图</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.showBookmarkBar" /> 显示书签栏</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.showStatusBar" /> 显示状态栏</label>
-              <div class="settings-section-title" style="margin-top:16px">节点显示</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.showNodeTimestamp" /> 显示节点创建时间戳</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.showNodeIcon" /> 显示节点图标</label>
-              <div class="settings-field" style="margin-top:12px"><label>节点名称字体大小</label><select v-model="settings.nodeFontSize" class="settings-select"><option value="12">12px</option><option value="14">14px</option><option value="16">16px</option><option value="18">18px</option></select></div>
-            </div>
-            <!-- 链接 -->
-            <div v-if="settingsTab==='links'">
-              <div class="settings-section-title">链接设置</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.linksClickable" /> 链接可点击</label>
-              <div class="settings-field"><label>链接点击动作</label><select v-model="settings.linkAction" class="settings-select"><option value="browser">在浏览器中打开</option><option value="internal">在内部打开</option><option value="ask">每次询问</option></select></div>
-              <div class="settings-section-title" style="margin-top:16px">文件链接</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.fileLinkRelative" /> 使用相对路径</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.fileLinkAutoUpdate" /> 文件移动时自动更新路径</label>
-            </div>
-            <!-- 工具栏 -->
-            <div v-if="settingsTab==='toolbar'">
-              <div class="settings-section-title">工具栏设置</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.toolbarIconsOnly" /> 仅显示图标（不显示文字）</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.toolbarLargeIcons" /> 使用大图标</label>
-              <div class="settings-section-title" style="margin-top:16px">工具栏按钮显示</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.tbNewNode" /> 新建节点</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.tbNav" /> 后退/前进</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.tbFile" /> 文件操作</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.tbSearch" /> 搜索</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.tbList" /> 列表与缩进</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.tbInsert" /> 插入元素</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.tbFormat" /> 格式化按钮</label>
-            </div>
-            <!-- 快捷键 -->
-            <div v-if="settingsTab==='shortcuts'">
-              <div class="settings-section-title">快捷键设置</div>
-              <div class="settings-shortcut-list">
-                <div class="settings-shortcut-item" v-for="sc in settings.shortcuts" :key="sc.action"><span class="settings-shortcut-action">{{ sc.action }}</span><input type="text" v-model="sc.key" class="settings-input" placeholder="快捷键" /></div>
-              </div>
-            </div>
-            <!-- 杂项 -->
-            <div v-if="settingsTab==='misc'">
-              <div class="settings-section-title">杂项设置</div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.autoSave" /> 自动保存</label>
-              <div class="settings-field" v-if="settings.autoSave"><label>自动保存间隔(秒)</label><input type="number" v-model.number="settings.autoSaveInterval" min="1" max="300" class="settings-input" /></div>
-              <label class="settings-check"><input type="checkbox" v-model="settings.backupOnSave" /> 保存时创建备份</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.confirmDelete" /> 删除节点前确认</label>
-              <label class="settings-check"><input type="checkbox" v-model="settings.rememberLastNode" /> 记住上次选中的节点</label>
-              <div class="settings-section-title" style="margin-top:16px">保存格式</div>
-              <label class="settings-radio"><input type="radio" v-model="settings.saveFormat" value="md" /> Markdown (.md)</label>
-              <label class="settings-radio"><input type="radio" v-model="settings.saveFormat" value="html" /> HTML (.html)</label>
-              <label class="settings-radio"><input type="radio" v-model="settings.saveFormat" value="txt" /> 纯文本 (.txt)</label>
-            </div>
-          </div>
+          <div class="lt-info-row" style="margin-top:8px">已选: {{ colorPickerValue }}</div>
         </div>
-        <div class="settings-footer">
-          <button class="modal-btn modal-btn-cancel" @click="settingsDlg = false"><span style="margin-right:4px">✕</span>关闭(C)</button>
+        <div class="lt-modal-footer">
+          <button class="lt-modal-btn" @click="showColorDialog=false">取消</button>
+          <button class="lt-modal-btn lt-modal-btn-primary" @click="confirmColor">确定</button>
         </div>
       </div>
+    </div>
+
+    <!-- ===== 更改 ID 对话框 ===== -->
+    <div v-if="showChangeIdDialog" class="lt-modal-overlay" @click="showChangeIdDialog=false">
+      <div class="lt-modal" @click.stop>
+        <div class="lt-modal-title">更改节点 ID</div>
+        <div class="lt-modal-body">
+          <label>新 ID: <input type="number" v-model.number="newNodeId" class="lt-modal-input" /></label>
+          <p style="color:#e74c3c;margin-top:8px;font-size:12px">警告：更改 ID 可能导致子节点关系断裂！</p>
+        </div>
+        <div class="lt-modal-footer">
+          <button class="lt-modal-btn" @click="showChangeIdDialog=false">取消</button>
+          <button class="lt-modal-btn lt-modal-btn-primary" @click="confirmChangeId">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 状态栏 ===== -->
+    <div class="lt-statusbar" v-show="showStatusbar">
+      <span class="lt-status-item">节点: {{ currentNode?.name || '-' }}</span>
+      <span class="lt-status-item">ID: {{ currentNode?.id || '-' }}</span>
+      <span class="lt-status-item">{{ statusMessage }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import TreeItem from './components/TreeItem.vue'
 import NoteEditor from './components/NoteEditor.vue'
 
+// ====== 响应式状态 ======
 const allNodes = ref([])
-const selectedId = ref(null)
-const selectedNode = ref(null)
-const darkMode = ref(false)
+const activeId = ref(null)
+const currentNode = ref(null)
+const currentContent = ref('')
 const expandedSet = ref(new Set())
+const bookmarks = ref([])
+const editorRef = ref(null)
+const statusMessage = ref('就绪')
+
+// ====== 面板可见性 ======
+const showTree = ref(true)
+const showStatusbar = ref(true)
+const showNodeNameHead = ref(true)
+const showToolbar = ref(true)
+
+// ====== 树搜索 ======
+const treeSearchKw = ref('')
+
+// ====== 树右键菜单 ======
+const showTreeMenu = ref(false)
+const treeMenuX = ref(0)
+const treeMenuY = ref(0)
+const treeMenuNode = ref(null)
+
+// ====== 全局搜索对话框 ======
+const showSearchDialog = ref(false)
 const searchKw = ref('')
+const searchCaseSensitive = ref(false)
+const searchWholeWord = ref(false)
+const searchRegex = ref(false)
+const searchMultiWord = ref(false)
+const searchDirection = ref('forward')
+const searchScope = ref('all')
+const searchTimeFilter = ref('')
 const searchResults = ref([])
-const searchInput = ref(null)
-let searchTimer = null
-const menuVisible = ref(false); const menuX = ref(0); const menuY = ref(0); const menuNodeId = ref(null)
-const saveStatus = ref('已保存')
-const treeContainer = ref(null)
-let navHistory = []; let navIdx = -1
-let docPath = ''
+const searchDone = ref(false)
 
-/* 视图状态 */
-const showToolbar = ref(true); const showTree = ref(true); const wrapLine = ref(true)
-const showLn = ref(false); const showWs = ref(false); const showLe = ref(false)
-let zoomFactor = 1.0
-
-/* 书签 */
-const bookmarks = ref([]); const bmDlg = ref(false); const bmEditList = ref([])
-
-/* 对话框状态 */
-const infoDlg = ref(false); const nodeInfo = ref(null)
-const idDlg = ref(false); const newId = ref(0)
-const iconDlg = ref(false); const colorDlg = ref(false)
-
-/* 搜索对话框 */
-const searchDlg = ref(false); const searchAllKw = ref(''); const searchAllInput = ref(null)
-const searchMatchCase = ref(false); const searchWholeWord = ref(false); const searchRegex = ref(false)
-const searchNoAccent = ref(false); const searchWordStart = ref(false); const searchOverrideExclude = ref(false)
-const searchMultiWord = ref('exact'); const searchDirection = ref('forward'); const searchScope = ref('all')
-const searchAfterCreated = ref(false); const searchBeforeCreated = ref(false)
-const searchAfterModified = ref(false); const searchBeforeModified = ref(false)
-const searchInContent = ref(true); const searchInName = ref(true)
-const searchOnlySelected = ref(false); const searchShowLoop = ref(true)
-const searchAllResults = ref([])
-
-/* 设置对话框 */
-const settingsDlg = ref(false); const settingsTab = ref('rich')
-const settings = ref({
-  textCodeScheme: 'light', tcFgColor: '#333', tcBgColor: '#fff', tcSelBg: '#4a90d9',
-  richScheme: 'light', richFgColor: '#333', richSelBg: '#4a90d9', richSelFg: '#fff',
-  plainStyle: 'default', codeStyle: 'default', richStyle: 'default',
-  userTab: 'user-1',
-  styleFg: '#333', styleBg: '#fff', styleSelFg: '#fff', styleSelBg: '#4a90d9',
-  styleCursor: '#333', styleCurLine: '#f5f5f5', styleLnFg: '#999', styleLnBg: '#f0f0f0',
-  iconTheme: 'system',
-  fmtShowLineNumbers: false, fmtWordWrap: true, fmtShowWhitespace: false, fmtShowLineEndings: false,
-  fmtAutoIndent: true, fmtSmartIndent: true, tabWidth: '4', useSpaces: true,
-  autoReplace: false, replaceRules: [{from:'--',to:'—'}, {from:'...',to:'…'}],
-  theme: 'light', uiSidebarBg: '#f5f0e8', uiEditorBg: '#fefbf5', uiToolbarBg: '#f8f4ed', uiSelColor: '#4a90d9', uiAccent: '#4a90d9',
-  showToolbar: true, showTree: true, showBookmarkBar: true, showStatusBar: true,
-  showNodeTimestamp: true, showNodeIcon: true, nodeFontSize: '14',
-  linksClickable: true, linkAction: 'browser', fileLinkRelative: true, fileLinkAutoUpdate: false,
-  toolbarIconsOnly: true, toolbarLargeIcons: false,
-  tbNewNode: true, tbNav: true, tbFile: true, tbSearch: true, tbList: true, tbInsert: true, tbFormat: true,
-  shortcuts: [
-    { action: '新建节点', key: 'Ctrl+N' }, { action: '添加子节点', key: 'Ctrl+J' },
-    { action: '保存', key: 'Ctrl+S' }, { action: '查找', key: 'Ctrl+F' },
-    { action: '加粗', key: 'Ctrl+B' }, { action: '斜体', key: 'Ctrl+I' },
-    { action: '插入时间戳', key: 'Ctrl+;' }, { action: '删除节点', key: 'Delete' }
-  ],
-  autoSave: true, autoSaveInterval: 5, backupOnSave: false, confirmDelete: true, rememberLastNode: true,
-  saveFormat: 'md'
+// ====== 设置对话框 ======
+const showSettingsDialog = ref(false)
+const settingsTab = ref('general')
+const settings = reactive({
+  showTreeOnStart: true,
+  autoSave: true,
+  showStatusbar: true,
+  editorFont: 'Microsoft YaHei',
+  editorFontSize: 14,
+  spellcheck: false,
+  showTreeLines: true,
+  expandOnStart: false,
+  contentFont: 'Microsoft YaHei',
+  lineHeight: 1.7,
+  theme: 'light',
+  exportFormat: 'pdf',
 })
 
-const iconList = ['📄','📔','📋','📌','📍','🔖','🏷','🌟','⭐','💡','🔑','🔒','🔓','🛡','⚙','🔧','🔨','🛠','💻','🖥','⌨','🖱','💾','💿','📁','📂','🗂','🗃','📦','📦','📤','📥','📨','📩','📧','📥','📝','✏','🖋','🖊','🖌','🖍','🎯','🏷','🎓','📚','📖','📰','🗞','📓','📔','📒','📕','📗','📘','📙','🔗','⛓','✅','☑','☐','❌','⛔','🔔','🔕','🎵','🎶','🎨','🎬','📷','🖼','🧩','🎲','🎮','🕹','🎰','🏆','🥇','🥈','🥉','🎁','🎂','🎉','🎊','🚀','🌍','🌎','🌏','🌐','🔬','🔭','🧪','🧫','🧬','💊','💉','🌡','🩺','🌱','🌿','☘','🍀','🍃','🌾','🌷','🌹','🌻','🌼','🌸','🌺','🍄','🌰','🎃','🐚','🪨','☀','🌙','⭐','🌟','✨','⚡','🔥','💧','🌊','❄','🌈','🍃','🌿']
-const hlColors = ['','transparent','#ffd0d0','#ffe599','#fff2cc','#d9ead3','#cfe2f3','#d9d2e9','#ffd9b3','#d0e0ff','#e6ccff','#cccccc','#ff9999','#ffcc66','#ffff66','#99cc66','#66cccc','#6666cc','#cc66cc','#ff6666','#ffaa33','#ffff00','#66cc33','#33cccc','#3366cc','#cc33cc','#808080','#cc0000','#e69100','#bf9000','#38761d','#134f5c','#0b5394','#741b47','#666666','#dd0000','#b45f06','#783f04','#274e13','#0c343d','#073763','#4c1130','#333333']
-let hasNodeClip = ref(false)
+// ====== 节点信息 ======
+const showNodeInfoDialog = ref(false)
+const nodeInfoData = ref(null)
 
-const rootNodes = computed(() => allNodes.value.filter(n => !n.parent_id).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)))
+// ====== 图标选择 ======
+const showIconDialog = ref(false)
+const iconPickerValue = ref('')
+let iconPickerCallback = null
+const iconList = [
+  '📄','📔','📁','📂','📝','🗒','🗓','📊','📈','📉','🔧','🔨','⭐','⭐','❤','💡','🔔','🔒','🔑','🎯',
+  '🎨','🎵','📷','🎥','🌐','🔗','📌','🏷','✅','❌','⚠','🔥','🚀','💻','📱','🛠','📚','✏️','🖊️','🧩',
+  '🏗','🌱','🌟','⚡','🛡','🌐','📦','🏆','🎁','🎈',
+]
 
-/* ================= 加载 ================= */
+// ====== 颜色选择 ======
+const showColorDialog = ref(false)
+const colorPickerValue = ref('')
+let colorPickerCallback = null
+const colorList = [
+  'transparent','#fefbf5','#fff8dc','#f0f0f0','#e8e8e8','#d6eaf8','#d5f5e3','#fdebd0','#fadbd8','#e8daef',
+  '#ff0000','#ff6600','#ff9900','#ffcc00','#99cc00','#33cc00','#0099cc','#0066ff','#9900cc','#ff00cc',
+  '#cc0000','#993300','#666600','#006633','#003366','#330066','#663366','#333333','#666666','#999999',
+]
+
+// ====== 更改 ID ======
+const showChangeIdDialog = ref(false)
+const newNodeId = ref(0)
+
+// ====== 计算属性 ======
+const rootNodes = computed(() => {
+  let nodes = allNodes.value.filter((n) => n.parent_id === null || n.parent_id === undefined)
+  nodes.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+  return nodes
+})
+
+// ====== 数据加载 ======
 async function loadTree() {
-  allNodes.value = await window.api.getTree()
-  const s = new Set(); allNodes.value.forEach(n => { if (n.is_expanded) s.add(n.id) }); expandedSet.value = s
-  bookmarks.value = await window.api.bmList()
-}
-function onToggle(id) {
-  const s = new Set(expandedSet.value); s.has(id) ? s.delete(id) : s.add(id); expandedSet.value = s
-  window.api.updateNode({ id, fields: { is_expanded: s.has(id) ? 1 : 0 } })
-}
-async function onSelect(node) { selectedId.value = node.id; selectedNode.value = await window.api.getNode(node.id) }
-async function onCreateNode({ parentId, name, icon }) {
-  const result = await window.api.createNode({ parentId, name, icon })
-  await loadTree()
-  if (parentId && !expandedSet.value.has(parentId)) onToggle(parentId)
-  const newNode = allNodes.value.find(n => n.id === result.id)
-  if (newNode) await onSelect(newNode)
-}
-async function onDelete(id) {
-  await window.api.deleteNode(id); await loadTree()
-  if (selectedId.value === id) { selectedNode.value = null; selectedId.value = null
-    const roots = allNodes.value.filter(n => !n.parent_id)
-    if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) }
-  }
-}
-async function onRename({ id, name }) { await window.api.updateNode({ id, fields: { name } }); await loadTree(); if (selectedId.value === id) selectedNode.value = await window.api.getNode(id) }
-async function onMove({ id, parentId, sortOrder }) { const r = await window.api.moveNode({ id, parentId, sortOrder }); if (r.success) await loadTree() }
-
-function addRoot() { onCreateNode({ parentId: null, name: '新建节点', icon: '📄' }) }
-function addChild() { if (selectedId.value) onCreateNode({ parentId: selectedId.value, name: '新建节点', icon: '📄' }) }
-function addSibling() { const n = allNodes.value.find(x => x.id === selectedId.value); if (n) onCreateNode({ parentId: n.parent_id, name: '新建节点', icon: '📄' }) }
-
-/* ================= 搜索 ================= */
-function onSearch() { clearTimeout(searchTimer); searchTimer = setTimeout(async () => { searchResults.value = searchKw.value.trim() ? await window.api.searchNodes(searchKw.value) : [] }, 300) }
-function clearSearch() { searchKw.value = ''; searchResults.value = [] }
-function focusSearch() { if (searchInput.value) searchInput.value.focus() }
-
-/* 全局搜索对话框 */
-async function execSearchAll() {
-  const kw = searchAllKw.value.trim()
-  if (!kw) { searchAllResults.value = []; return }
-  searchAllResults.value = await window.api.searchNodes(kw)
-}
-async function onSearchResultClick(r) {
-  searchDlg.value = false
-  const n = allNodes.value.find(x => x.id === r.id)
-  if (n) { let p = n.parent_id; while (p) { if (!expandedSet.value.has(p)) onToggle(p); const pn = allNodes.value.find(x => x.id === p); p = pn ? pn.parent_id : null }; await onSelect(n) }
-}
-async function onSearchClick(r) {
-  clearSearch()
-  const n = allNodes.value.find(x => x.id === r.id)
-  if (n) { let p = n.parent_id; while (p) { if (!expandedSet.value.has(p)) onToggle(p); const pn = allNodes.value.find(x => x.id === p); p = pn ? pn.parent_id : null }; await onSelect(n) }
-}
-
-/* ================= 树键盘（Delete 删除节点） ================= */
-function onTreeKey(e) {
-  if (e.key === 'Delete' && selectedId.value && treeContainer.value?.contains(document.activeElement)) {
-    e.preventDefault(); onDelete(selectedId.value)
-  }
-}
-
-/* ================= 树右键菜单 ================= */
-function onCtxMenu(e) { menuX.value = e.detail.x; menuY.value = e.detail.y; menuNodeId.value = e.detail.nodeId; menuVisible.value = true }
-function closeMenu() { menuVisible.value = false }
-function mAct(action) {
-  const id = menuNodeId.value; closeMenu()
-  if (!id && action !== 'paste-node' && action !== 'expand-all' && action !== 'collapse-all') return
-  switch (action) {
-    case 'add-child': onCreateNode({ parentId: id, name: '新建节点', icon: '📄' }); break
-    case 'add-sibling': { const n = allNodes.value.find(x => x.id === id); if (n) onCreateNode({ parentId: n.parent_id, name: '新建节点', icon: '📄' }); break }
-    case 'rename': window.dispatchEvent(new CustomEvent('tree-rename', { detail: { id } })); break
-    case 'node-icon': iconDlg.value = true; break
-    case 'node-color': colorDlg.value = true; break
-    case 'node-up': window.api.nodeUp(id).then(() => loadTree()); break
-    case 'node-down': window.api.nodeDown(id).then(() => loadTree()); break
-    case 'dup-node': window.api.duplicateNode(id).then(() => loadTree()); break
-    case 'copy-node': window.api.copyNode(id).then(() => hasNodeClip.value = true); break
-    case 'cut-node': window.api.cutNode(id).then(() => { hasNodeClip.value = true; loadTree() }); break
-    case 'paste-node': window.api.pasteNode({ targetId: id }).then(() => loadTree()); break
-    case 'sort-children': window.api.sortChildren(id).then(() => loadTree()); break
-    case 'expand-all': window.api.expandAll().then(() => loadTree()); break
-    case 'collapse-all': window.api.collapseAll().then(() => loadTree()); break
-    case 'bm-add': window.api.bmAdd(id).then(() => bookmarks.value = window.api.bmList()); break
-    case 'bm-remove': window.api.bmRemove(id).then(() => bookmarks.value = window.api.bmList()); break
-    case 'node-info': showNodeInfo(id); break
-    case 'exp-html': window.api.exportHtml({ node: allNodes.value.find(x => x.id === id) }); break
-    case 'exp-txt': window.api.exportTxt({ node: allNodes.value.find(x => x.id === id) }); break
-    case 'exp-pdf': window.api.exportPdf({ node: allNodes.value.find(x => x.id === id) }); break
-    case 'delete': onDelete(id); break
-  }
-}
-async function pickIcon(ic) { await window.api.updateNode({ id: menuNodeId.value, fields: { icon: ic } }); iconDlg.value = false; await loadTree() }
-async function pickColor(c) { await window.api.updateNode({ id: menuNodeId.value, fields: { color: c || '' } }); colorDlg.value = false; await loadTree() }
-async function showNodeInfo(id) { nodeInfo.value = await window.api.nodeInfo(id); infoDlg.value = true }
-
-/* ================= 书签 ================= */
-async function gotoBookmark(b) { clearSearch(); const n = allNodes.value.find(x => x.id === b.id); if (n) { let p = n.parent_id; while (p) { if (!expandedSet.value.has(p)) onToggle(p); const pn = allNodes.value.find(x => x.id === p); p = pn ? pn.parent_id : null }; await onSelect(n) } }
-function openBmHandle() { bmEditList.value = [...bookmarks.value]; bmDlg.value = true }
-async function bmMove(id, dir) { await window.api.bmMove({ id, dir }); bookmarks.value = await window.api.bmList(); bmEditList.value = [...bookmarks.value] }
-async function bmRemove(id) { await window.api.bmRemove(id); bookmarks.value = await window.api.bmList(); bmEditList.value = [...bookmarks.value] }
-
-/* ================= 保存 ================= */
-let saveTimer = null
-function onSave({ id, content }) {
-  saveStatus.value = '保存中...'
-  clearTimeout(saveTimer)
-  saveTimer = setTimeout(async () => { await window.api.updateNode({ id, fields: { content } }); saveStatus.value = '已保存'
-    if (selectedNode.value && selectedNode.value.id === id) selectedNode.value = { ...selectedNode.value, content } }, 300)
-}
-
-/* ================= 视图 ================= */
-function toggleDark() { darkMode.value = !darkMode.value; localStorage.setItem('lt-dark', darkMode.value ? '1' : '0') }
-function setZoom(delta) { zoomFactor = Math.max(0.3, Math.min(3, zoomFactor + delta)); document.body.style.zoom = zoomFactor }
-
-/* ================= 菜单事件总分发（CherryTree action ID 完整映射） ================= */
-function handleMenu(ch) {
-  if (!ch) return
   try {
-    const appActions = {
-      /* 文件 */
-      'ct_new_inst': () => window.api.newInstance(),
-      'ct_open_folder': () => window.api.importTxtFolder(),
-      'ct_open_file': () => window.api.openDoc(),
-      'ct_vacuum': async () => { await window.api.saveDoc(); saveStatus.value = '已保存' },
-      'ct_save': async () => { await window.api.saveDoc(); saveStatus.value = '已保存' },
-      'ct_save_as': async () => { await window.api.saveDocAs(); saveStatus.value = '已保存' },
-      'print_page_setup': () => { alert('页面设置\n\n纸张: A4\n边距: 默认\n方向: 纵向') },
-      'do_print': () => window.api.printDoc(),
-      'preferences_dlg': () => { settingsDlg.value = true },
-      'pref_import': () => { alert('导入设置功能即将推出') },
-      'pref_export': () => { alert('导出设置功能即将推出') },
-      'open_cfg_folder': () => { shell.openPath ? null : null; alert('配置文件夹: ' + (docPath || '未指定')) },
-      'tree_parse_info': () => { const cnt = allNodes.value.length; alert(`树信息\n\n节点总数: ${cnt}\n根节点数: ${allNodes.value.filter(n => !n.parent_id).length}\n书签数: ${bookmarks.value.length}\n\n文档格式: Markdown (.md)`) },
-      'doc_path_clip': () => { window.api.clipboardWriteText(docPath || ''); alert('文档路径已复制到剪贴板') },
+    allNodes.value = await window.api.getTree()
+    // 恢复展开状态
+    allNodes.value.forEach((n) => {
+      if (n.is_expanded) expandedSet.value.add(n.id)
+    })
+  } catch (e) {
+    console.error('loadTree error:', e)
+    allNodes.value = []
+  }
+}
 
-      /* 导出 */
-      'export_pdf': () => { if (selectedNode.value) window.api.exportPdf({ node: selectedNode.value }) },
-      'export_html': () => { if (selectedNode.value) window.api.exportHtml({ node: selectedNode.value }) },
-      'export_txt': () => { if (selectedNode.value) window.api.exportTxt({ node: selectedNode.value }) },
-      'export_ct': () => { alert('导出为 CherryTree 文档：已保存为 .md 格式') },
+async function loadBookmarks() {
+  try {
+    bookmarks.value = await window.api.bmList()
+  } catch (e) {
+    console.error('loadBookmarks error:', e)
+    bookmarks.value = []
+  }
+}
 
-      /* 导入 */
-      'import_txt_file': () => window.api.importTxt(),
-      'import_txt_folder': () => window.api.importTxtFolder(),
-      'import_html_file': () => window.api.importHtml(),
+// ====== 节点操作 ======
+async function onSelectNode(node) {
+  if (!node || !node.id) return
+  activeId.value = node.id
+  try {
+    const full = await window.api.getNode(node.id)
+    currentNode.value = full
+    currentContent.value = full.content || ''
+  } catch (e) {
+    console.error('getNode error:', e)
+  }
+}
 
-      /* 树型 */
-      'tree_add_node': () => addSibling(),
-      'tree_add_subnode': () => addChild(),
-      'tree_dup_node': () => { if (selectedId.value) window.api.duplicateNode(selectedId.value).then(() => loadTree()) },
-      'tree_node_up': () => { if (selectedId.value) window.api.nodeUp(selectedId.value).then(() => loadTree()) },
-      'tree_node_down': () => { if (selectedId.value) window.api.nodeDown(selectedId.value).then(() => loadTree()) },
-      'tree_node_del': () => { if (selectedId.value) onDelete(selectedId.value) },
-      'tree_node_prop': () => { if (selectedId.value) showNodeInfo(selectedId.value) },
-      'tree_sibl_sort_asc': () => { if (selectedId.value) window.api.sortChildren(selectedId.value).then(() => loadTree()) },
-      'tree_sibl_sort_desc': () => { if (selectedId.value) window.api.sortChildren(selectedId.value).then(() => loadTree()) },
-      'tree_all_sort_asc': () => window.api.sortTree().then(() => loadTree()),
-      'tree_all_sort_desc': () => window.api.sortTree().then(() => loadTree()),
-      'nodes_all_expand': () => window.api.expandAll().then(() => loadTree()),
-      'nodes_all_collapse': () => window.api.collapseAll().then(() => loadTree()),
-      'node_bookmark': () => { if (selectedId.value) window.api.bmAdd(selectedId.value).then(() => bookmarks.value = window.api.bmList()) },
-      'node_unbookmark': () => { if (selectedId.value) window.api.bmRemove(selectedId.value).then(() => bookmarks.value = window.api.bmList()) },
+function onToggleExpand(id) {
+  if (expandedSet.value.has(id)) {
+    expandedSet.value.delete(id)
+    try { window.api.updateNode({ id, fields: { is_expanded: 0 } }) } catch {}
+  } else {
+    expandedSet.value.add(id)
+    try { window.api.updateNode({ id, fields: { is_expanded: 1 } }) } catch {}
+  }
+  // 触发响应式
+  expandedSet.value = new Set(expandedSet.value)
+}
 
-      /* 搜索 */
-      'find_in_node': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'find_in_node' } })) },
-      'find_in_allnodes': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
-      'find_in_node_names': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
-      'find_iter_fw': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'find_iter_fw' } })) },
-      'find_iter_bw': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'find_iter_bw' } })) },
-      'replace_in_node': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'replace_in_node' } })) },
-      'replace_in_allnodes': () => {
-        const find = prompt('查找内容：'); if (!find) return
-        const replace = prompt('替换为：', ''); if (replace === null) return
-        window.api.replaceAllNodes({ find, replace }).then(r => { alert(`已替换 ${r.count} 处`); loadTree(); if (selectedId.value) onSelect({ id: selectedId.value }) })
-      },
-      'select_node': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
+async function onRenameNode({ id, name }) {
+  try {
+    await window.api.updateNode({ id, fields: { name } })
+    const n = allNodes.value.find((x) => x.id === id)
+    if (n) n.name = name
+    if (currentNode.value?.id === id) currentNode.value.name = name
+    statusMessage.value = '已重命名'
+  } catch (e) {
+    console.error('rename error:', e)
+  }
+}
 
-      /* 查看 */
-      'toggle_show_tree': () => showTree.value = !showTree.value,
-      'toggle_show_toolbar': () => showToolbar.value = !showToolbar.value,
-      'toggle_show_statusbar': () => { /* toggle status bar */ },
-      'toggle_fullscreen': () => { /* fullscreen toggle */ },
-      'zoom_in': () => setZoom(0.1),
-      'zoom_out': () => setZoom(-0.1),
-
-      /* 帮助 */
-      'ct_check_newer': () => window.open('https://github.com/cornelius150/LimeTree/releases', '_blank'),
-      'ct_homepage': () => window.open('https://github.com/cornelius150/LimeTree', '_blank'),
-      'ct_github': () => window.open('https://github.com/cornelius150/LimeTree', '_blank'),
-      'ct_issues': () => window.open('https://github.com/cornelius150/LimeTree/issues', '_blank'),
-      'ct_help': () => window.open('https://github.com/cornelius150/LimeTree#readme', '_blank'),
-      'ct_about': () => { alert('LimeTree v2.1.0\n树形笔记本软件\n\n基于 CherryTree 源码菜单结构\n图片/表格/代码框可拖拽缩放\nMarkdown 格式存储 (.md)\n节点时间戳\n\nGitHub: https://github.com/cornelius150/LimeTree') },
+async function addNode(parentId) {
+  try {
+    const r = await window.api.createNode({ parentId, name: '新建节点', icon: '📄' })
+    if (r && r.id) {
+      await loadTree()
+      await onSelectNode({ id: r.id, name: '新建节点', icon: '📄' })
+      if (parentId) expandedSet.value.add(parentId)
+      expandedSet.value = new Set(expandedSet.value)
+      statusMessage.value = '已添加节点'
     }
-
-    /* 导入不支持格式 */
-    const impFmts = { 'import_ct_folder': 'CherryTree 文件夹', 'import_ct_file': 'CherryTree 文件', 'import_indented_list': '缩进列表', 'import_html_folder': 'HTML 文件夹', 'import_md_file': 'Markdown 文件', 'import_md_folder': 'Markdown 文件夹', 'import_gnote': 'Gnote', 'import_keepnote': 'KeepNote', 'import_leo': 'Leo', 'import_mempad': 'Mempad', 'import_notecase': 'NoteCase', 'import_rednotebook': 'RedNotebook', 'import_tomboy': 'Tomboy', 'import_treepad': 'TreePad', 'import_zim': 'Zim' }
-    if (impFmts[ch]) { try { window.api.importUnsupported(impFmts[ch]) } catch(e) { alert('暂不支持从 ' + impFmts[ch] + ' 导入') }; return }
-
-    if (appActions[ch]) { appActions[ch](); return }
-
-    /* 其余编辑器相关菜单事件转发 */
-    try { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: ch } })) } catch (e) { console.error('dispatch editor-menu failed:', e) }
-  } catch (e) { console.error('handleMenu error for', ch, ':', e) }
-}
-async function confirmChangeId() {
-  if (!newId.value || !menuNodeId.value && !selectedId.value) return
-  const id = menuNodeId.value || selectedId.value
-  const r = await window.api.changeNodeId({ id, newId: newId.value })
-  if (r.success) { idDlg.value = false; await loadTree() } else { alert(r.reason || '更改 ID 失败') }
+  } catch (e) {
+    console.error('addNode error:', e)
+  }
 }
 
-/* ================= 注册单通道菜单事件 ================= */
+async function deleteNode(id) {
+  try {
+    await window.api.deleteNode(id)
+    if (currentNode.value?.id === id) {
+      currentNode.value = null
+      currentContent.value = ''
+      activeId.value = null
+    }
+    await loadTree()
+    await loadBookmarks()
+    statusMessage.value = '已删除节点'
+  } catch (e) {
+    console.error('deleteNode error:', e)
+  }
+}
+
+async function moveNodeUp(id) {
+  try { await window.api.nodeUp(id) } catch {}
+  await loadTree()
+}
+async function moveNodeDown(id) {
+  try { await window.api.nodeDown(id) } catch {}
+  await loadTree()
+}
+
+async function copyNode(id) {
+  try { await window.api.copyNode(id); statusMessage.value = '已复制' } catch (e) { console.error(e) }
+}
+async function cutNode(id) {
+  try { await window.api.cutNode(id); statusMessage.value = '已剪切' } catch (e) { console.error(e) }
+}
+async function pasteNode(targetId) {
+  try { await window.api.pasteNode({ targetId }); await loadTree(); statusMessage.value = '已粘贴' } catch (e) { console.error(e) }
+}
+
+async function sortChildren(id) {
+  try { await window.api.sortChildren(id); await loadTree(); statusMessage.value = '已排序' } catch (e) { console.error(e) }
+}
+
+async function expandAll() {
+  try { await window.api.expandAll(); await loadTree(); allNodes.value.forEach((n) => expandedSet.value.add(n.id)); expandedSet.value = new Set(expandedSet.value) } catch (e) { console.error(e) }
+}
+async function collapseAll() {
+  try { await window.api.collapseAll(); await loadTree(); expandedSet.value.clear(); expandedSet.value = new Set() } catch (e) { console.error(e) }
+}
+
+async function toggleBookmark(id) {
+  try {
+    const exists = bookmarks.value.find((b) => b.id === id)
+    if (exists) { await window.api.bmRemove(id); statusMessage.value = '已从书签删除' }
+    else { await window.api.bmAdd(id); statusMessage.value = '已添加到书签' }
+    await loadBookmarks()
+  } catch (e) { console.error(e) }
+}
+
+// ====== 内容保存 ======
+async function onSaveContent(md) {
+  if (!currentNode.value || !activeId.value) return
+  try {
+    await window.api.updateNode({ id: activeId.value, fields: { content: md } })
+    currentNode.value.content = md
+  } catch (e) {
+    console.error('save content error:', e)
+  }
+}
+
+// ====== 树右键菜单 ======
+function onTreeContextMenu({ event, node }) {
+  treeMenuNode.value = node
+  treeMenuX.value = event.clientX
+  treeMenuY.value = event.clientY
+  showTreeMenu.value = true
+  // 选中的菜单节点也设为活动节点
+  activeId.value = node.id
+}
+
+async function treeMenuAction(action) {
+  const node = treeMenuNode.value
+  showTreeMenu.value = false
+  if (!node) return
+  try {
+    switch (action) {
+      case 'tree_add_subnode': await addNode(node.id); break
+      case 'tree_add_node': await addNode(node.parent_id); break
+      case 'tree_node_prop':
+        // 重命名通过 dispatch rename
+        const newName = prompt('新名称:', node.name)
+        if (newName && newName !== node.name) await onRenameNode({ id: node.id, name: newName })
+        break
+      case 'change_icon':
+        iconPickerValue.value = node.icon || ''
+        iconPickerCallback = async (icon) => {
+          try { await window.api.updateNode({ id: node.id, fields: { icon } }); await loadTree(); if (currentNode.value?.id === node.id) currentNode.value.icon = icon } catch (e) { console.error(e) }
+        }
+        showIconDialog.value = true
+        break
+      case 'change_color':
+        colorPickerValue.value = node.color || 'transparent'
+        colorPickerCallback = async (color) => {
+          try { await window.api.updateNode({ id: node.id, fields: { color: color === 'transparent' ? '' : color } }); await loadTree() } catch (e) { console.error(e) }
+        }
+        showColorDialog.value = true
+        break
+      case 'tree_node_up': await moveNodeUp(node.id); break
+      case 'tree_node_down': await moveNodeDown(node.id); break
+      case 'copy_node': await copyNode(node.id); break
+      case 'cut_node': await cutNode(node.id); break
+      case 'paste_node': await pasteNode(node.id); break
+      case 'tree_sibl_sort_asc': await sortChildren(node.id); break
+      case 'nodes_all_expand': await expandAll(); break
+      case 'nodes_all_collapse': await collapseAll(); break
+      case 'node_bookmark': await toggleBookmark(node.id); break
+      case 'node_unbookmark': await toggleBookmark(node.id); break
+      case 'export_txt': await exportNode('txt', node); break
+      case 'export_html': await exportNode('html', node); break
+      case 'export_pdf': await exportNode('pdf', node); break
+      case 'tree_node_del':
+        if (confirm('确定删除节点 "' + node.name + '" 及其所有子节点?')) await deleteNode(node.id)
+        break
+    }
+  } catch (e) {
+    console.error('treeMenuAction error:', action, e)
+  }
+}
+
+function confirmIcon() {
+  showIconDialog.value = false
+  if (iconPickerCallback) iconPickerCallback(iconPickerValue.value)
+}
+function confirmColor() {
+  showColorDialog.value = false
+  if (colorPickerCallback) colorPickerCallback(colorPickerValue.value)
+}
+function confirmChangeId() {
+  showChangeIdDialog.value = false
+  statusMessage.value = 'ID 更改功能暂不可用'
+}
+
+// ====== 导出 ======
+async function exportNode(fmt, node) {
+  try {
+    const full = node.id ? await window.api.getNode(node.id) : currentNode.value
+    if (!full) return
+    if (fmt === 'txt') await window.api.exportTxt({ node: full })
+    else if (fmt === 'html') await window.api.exportHtml({ node: full })
+    else if (fmt === 'pdf') await window.api.exportPdf({ node: full })
+    statusMessage.value = '已导出 ' + fmt.toUpperCase()
+  } catch (e) { console.error('export error:', e) }
+}
+
+// ====== 拖拽排序 ======
+let draggedNode = null
+function onDragStart(node) { draggedNode = node }
+function onDragEnd() { draggedNode = null }
+async function onDropNode({ draggedId, targetId }) {
+  if (draggedId === targetId) return
+  try {
+    await window.api.moveNode({ id: draggedId, parentId: targetId, sortOrder: 0 })
+    await loadTree()
+  } catch (e) { console.error('drop error:', e) }
+}
+
+// ====== 树搜索 ======
+async function doTreeSearch() {
+  if (!treeSearchKw.value.trim()) return
+  try {
+    const results = await window.api.searchNodes(treeSearchKw.value)
+    if (results.length > 0) {
+      await onSelectNode(results[0])
+      statusMessage.value = `找到 ${results.length} 个结果`
+    } else {
+      statusMessage.value = '未找到匹配节点'
+    }
+  } catch (e) { console.error(e) }
+}
+
+// ====== 全局搜索 ======
+async function doSearchAll() {
+  if (!searchKw.value.trim()) return
+  searchDone.value = false
+  try {
+    searchResults.value = await window.api.searchNodes(searchKw.value)
+    searchDone.value = true
+  } catch (e) {
+    console.error(e)
+    searchResults.value = []
+    searchDone.value = true
+  }
+}
+
+function jumpToSearchResult(r) {
+  showSearchDialog.value = false
+  onSelectNode(r)
+}
+
+// ====== 分隔条拖拽 ======
+function startSplitDrag(e) {
+  e.preventDefault()
+  const startX = e.clientX
+  const treePanel = document.querySelector('.lt-tree-panel')
+  const startW = treePanel ? treePanel.offsetWidth : 250
+  const onMove = (ev) => {
+    const newW = Math.max(150, Math.min(500, startW + ev.clientX - startX))
+    if (treePanel) treePanel.style.width = newW + 'px'
+  }
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
+// ====== 编辑器菜单转发 ======
+function onEditorMenuFromChild(action) {
+  // 从 NoteEditor 转发出来的 action（NoteEditor 内部已处理编辑器操作，
+  // 只有需要 App 层处理的才到达这里）
+  handleMenu(action)
+}
+
+// ====== handleMenu: 主菜单分发 ======
+const appActions = {
+  // --- 文件 ---
+  ct_new_inst: () => { try { window.api.newInstance() } catch {} },
+  ct_open_folder: async () => { try { await window.api.importTxtFolder(); await reloadAll() } catch {} },
+  ct_open_file: async () => { try { await window.api.openDoc(); } catch {} },
+  ct_vacuum: async () => { try { await window.api.saveDoc(); statusMessage.value = '已保存并清理' } catch {} },
+  ct_save: async () => { try { await window.api.saveDoc(); statusMessage.value = '已保存' } catch {} },
+  ct_save_as: async () => { try { await window.api.saveDocAs(); statusMessage.value = '已另存为' } catch {} },
+  print_page_setup: () => { statusMessage.value = '页面设置（请在打印对话框中设置）' },
+  do_print: async () => { try { await window.api.printDoc() } catch {} },
+  preferences_dlg: () => { showSettingsDialog.value = true },
+  tree_parse_info: async () => {
+    try {
+      const info = { nodes: allNodes.value.length, bookmarks: bookmarks.value.length }
+      alert(`树信息\n节点总数: ${info.nodes}\n书签数: ${info.bookmarks}`)
+    } catch {}
+  },
+  doc_path_clip: async () => { try { await window.api.clipboardWriteText('LimeTree Document'); statusMessage.value = '路径已复制' } catch {} },
+
+  // --- 导入 ---
+  import_txt_file: async () => { try { await window.api.importTxt(); await reloadAll() } catch {} },
+  import_txt_folder: async () => { try { await window.api.importTxtFolder(); await reloadAll() } catch {} },
+  import_html_file: async () => { try { await window.api.importHtml(); await reloadAll() } catch {} },
+  import_md_file: async () => { try { await window.api.importTxt(); await reloadAll() } catch {} },
+  import_ct_file: () => { try { window.api.importUnsupported('CherryTree') } catch {} },
+  import_gnote: () => { try { window.api.importUnsupported('Gnote') } catch {} },
+  import_keepnote: () => { try { window.api.importUnsupported('KeepNote') } catch {} },
+  import_leo: () => { try { window.api.importUnsupported('Leo') } catch {} },
+  import_mempad: () => { try { window.api.importUnsupported('Mempad') } catch {} },
+  import_notecase: () => { try { window.api.importUnsupported('NoteCase') } catch {} },
+  import_rednotebook: () => { try { window.api.importUnsupported('RedNotebook') } catch {} },
+  import_tomboy: () => { try { window.api.importUnsupported('Tomboy') } catch {} },
+  import_treepad: () => { try { window.api.importUnsupported('TreePad') } catch {} },
+  import_zim: () => { try { window.api.importUnsupported('Zim') } catch {} },
+
+  // --- 导出 ---
+  export_pdf: async () => { await exportNode('pdf', currentNode.value || {}) },
+  export_html: async () => { await exportNode('html', currentNode.value || {}) },
+  export_txt: async () => { await exportNode('txt', currentNode.value || {}) },
+  export_ct: () => { statusMessage.value = 'CherryTree 导出暂不可用' },
+
+  // --- 树型 ---
+  go_node_next: () => navigateNode(1),
+  go_node_prev: () => navigateNode(-1),
+  tree_add_node: async () => {
+    const pid = currentNode.value?.parent_id
+    await addNode(pid)
+  },
+  tree_add_subnode: async () => {
+    const pid = activeId.value
+    await addNode(pid)
+  },
+  tree_dup_node: async () => {
+    try { await window.api.duplicateNode(activeId.value); await loadTree() } catch (e) { console.error(e) }
+  },
+  tree_dup_node_subnodes: async () => {
+    try { await window.api.duplicateNode(activeId.value); await loadTree() } catch (e) { console.error(e) }
+  },
+  tree_node_prop: async () => {
+    if (!currentNode.value) return
+    const newName = prompt('新名称:', currentNode.value.name)
+    if (newName) await onRenameNode({ id: activeId.value, name: newName })
+  },
+  tree_node_toggle_ro: () => { statusMessage.value = '只读模式切换' },
+  tree_node_link: () => { statusMessage.value = '节点链接' },
+  child_nodes_inherit_syntax: () => { statusMessage.value = '子节点继承语法' },
+  node_bookmark: async () => { if (activeId.value) await toggleBookmark(activeId.value) },
+  node_unbookmark: async () => { if (activeId.value) await toggleBookmark(activeId.value) },
+  nodes_all_expand: async () => { await expandAll() },
+  nodes_all_collapse: async () => { await collapseAll() },
+  tree_node_up: async () => { if (activeId.value) await moveNodeUp(activeId.value) },
+  tree_node_down: async () => { if (activeId.value) await moveNodeDown(activeId.value) },
+  tree_node_left: async () => {
+    if (!currentNode.value) return
+    try { await window.api.moveNode({ id: activeId.value, parentId: null, sortOrder: 0 }); await loadTree() } catch (e) { console.error(e) }
+  },
+  tree_node_right: async () => {
+    if (!currentNode.value) return
+    statusMessage.value = '请拖拽到目标节点'
+  },
+  tree_node_new_father: async () => {
+    statusMessage.value = '请拖拽到目标父节点'
+  },
+  tree_sibl_sort_asc: async () => { if (activeId.value) await sortChildren(activeId.value) },
+  tree_sibl_sort_desc: async () => { if (activeId.value) await sortChildren(activeId.value) },
+  tree_all_sort_asc: async () => { try { await window.api.sortTree(); await loadTree() } catch (e) { console.error(e) } },
+  tree_all_sort_desc: async () => { try { await window.api.sortTree(); await loadTree() } catch (e) { console.error(e) } },
+  tree_node_del: async () => {
+    if (!currentNode.value) return
+    if (confirm('确定删除节点 "' + currentNode.value.name + '" 及其所有子节点?')) await deleteNode(activeId.value)
+  },
+
+  // --- 搜索 ---
+  select_node: () => { treeSearchKw.value = ''; doTreeSearch() },
+  find_in_node_names: () => { treeSearchKw.value = ''; statusMessage.value = '请在左侧搜索框输入' },
+  find_in_node: () => { dispatchEditor('find_in_node') },
+  find_in_allnodes: () => { showSearchDialog.value = true },
+  find_iter_fw: () => { dispatchEditor('find_iter_fw') },
+  find_iter_bw: () => { dispatchEditor('find_iter_bw') },
+  replace_in_node: () => { dispatchEditor('replace_in_node') },
+  replace_in_allnodes: async () => {
+    const find = prompt('查找:')
+    if (!find) return
+    const replace = prompt('替换为:')
+    try { const r = await window.api.replaceAllNodes({ find, replace }); statusMessage.value = `已替换 ${r.count} 处`; await reloadAll() } catch (e) { console.error(e) }
+  },
+  replace_iter_fw: () => { dispatchEditor('replace_iter_fw') },
+
+  // --- 查看 ---
+  toggle_show_tree: () => { showTree.value = !showTree.value },
+  toggle_show_treelines: () => { document.body.classList.toggle('lt-no-treelines') },
+  toggle_show_menubar: () => { statusMessage.value = '菜单栏切换' },
+  toggle_show_toolbar: () => { showToolbar.value = !showToolbar.value; document.body.classList.toggle('lt-hide-toolbar') },
+  toggle_show_statusbar: () => { showStatusbar.value = !showStatusbar.value },
+  toggle_show_node_name_head: () => { showNodeNameHead.value = !showNodeNameHead.value },
+  toggle_fullscreen: () => { try { window.electronAPI?.toggleFullscreen?.() } catch {}; statusMessage.value = '全屏切换' },
+  toggle_always_on_top: () => { statusMessage.value = '总在最前' },
+  toggle_focus_tree_text: () => { statusMessage.value = '焦点切换' },
+  toolbar_icons_size_p: () => { document.body.style.setProperty('--lt-toolbar-size', '20px') },
+  toolbar_icons_size_m: () => { document.body.style.setProperty('--lt-toolbar-size', '14px') },
+  zoom_in: () => { try { const cur = parseFloat(document.body.style.fontSize || '14px'); document.body.style.fontSize = (cur + 1) + 'px' } catch {} },
+  zoom_out: () => { try { const cur = parseFloat(document.body.style.fontSize || '14px'); document.body.style.fontSize = Math.max(8, cur - 1) + 'px' } catch {} },
+
+  // --- 帮助 ---
+  ct_check_newer: () => { statusMessage.value = '检查更新: 当前为最新版本' },
+  ct_homepage: () => { statusMessage.value = '主页: https://github.com/huanggshou/LimeTree' },
+  ct_github: () => { statusMessage.value = 'GitHub: https://github.com/huanggshou/LimeTree' },
+  ct_issues: () => { statusMessage.value = '问题反馈: https://github.com/huanggshou/LimeTree/issues' },
+  ct_help: () => { statusMessage.value = '帮助: LimeTree - 树形笔记应用' },
+  ct_about: () => {
+    alert('LimeTree v2.1.0\n\n基于 Electron + Vue3 + TipTap\n功能对齐 CherryTree\n\n作者: huanggshou')
+  },
+
+  // --- 节点信息/更改 ID ---
+  tree_node_info: async () => {
+    if (!activeId.value) return
+    try { nodeInfoData.value = await window.api.nodeInfo(activeId.value); showNodeInfoDialog.value = true } catch (e) { console.error(e) }
+  },
+  change_node_id: () => {
+    if (!currentNode.value) return
+    newNodeId.value = activeId.value
+    showChangeIdDialog.value = true
+  },
+}
+
+// 编辑器相关 action 集合
+const editorActions = new Set([
+  'act_undo','act_redo','cut_plain','copy_plain','paste_plain',
+  'cut_row','copy_row','dup_row','mv_up_row','mv_down_row','del_row',
+  'table_column_add','table_column_delete','table_row_add','table_row_delete',
+  'table_delete','table_edit_properties','table_column_left','table_column_right',
+  'table_column_increase_width','table_column_decrease_width','table_row_up','table_row_down',
+  'codebox_change_properties','codebox_increase_width','codebox_decrease_width',
+  'codebox_increase_height','codebox_decrease_height',
+  'handle_image','handle_table','handle_codebox','handle_embfile',
+  'handle_link','handle_anchor','insert_toc','insert_timestamp',
+  'insert_special_char','insert_horiz_rule','handle_bull_list','handle_num_list','handle_todo_list',
+  'fmt_clone','fmt_latest','fmt_rm','fmt_color_fg','fmt_color_bg',
+  'fmt_bold','fmt_italic','fmt_underline','fmt_strikethrough','fmt_monospace',
+  'fmt_small','fmt_subscript','fmt_superscript','fmt_h1','fmt_h2','fmt_h3','fmt_h4','fmt_h5','fmt_h6',
+  'case_down','case_up','case_tggl','fmt_indent','fmt_unindent',
+  'head_expand','head_collapse',
+  'fmt_justify_left','fmt_justify_center','fmt_justify_right','fmt_justify_fill',
+  'spellcheck_toggle','exec_code_los','exec_code_all','strip_trail_spaces','repl_tabs_spaces',
+  'command_palette',
+])
+
+function dispatchEditor(action) {
+  if (editorRef.value && editorRef.value.onEditorMenu) {
+    editorRef.value.onEditorMenu(action)
+  }
+}
+
+function handleMenu(action) {
+  try {
+    // 先检查 App 级 action
+    if (appActions[action]) {
+      appActions[action]()
+      return
+    }
+    // 再检查编辑器 action
+    if (editorActions.has(action)) {
+      dispatchEditor(action)
+      return
+    }
+    // 未识别的 action 静默忽略
+  } catch (err) {
+    console.error('handleMenu error:', action, err)
+  }
+}
+
+// ====== 节点导航 ======
+function navigateNode(dir) {
+  const sorted = []
+  function walk(nodes) {
+    for (const n of nodes) {
+      sorted.push(n)
+      const kids = allNodes.value.filter((x) => x.parent_id === n.id).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      if (expandedSet.value.has(n.id)) walk(kids)
+    }
+  }
+  walk(rootNodes.value)
+  const idx = sorted.findIndex((n) => n.id === activeId.value)
+  if (idx === -1) return
+  const next = dir > 0 ? Math.min(sorted.length - 1, idx + 1) : Math.max(0, idx - 1)
+  onSelectNode(sorted[next])
+}
+
+// ====== 重新加载 ======
+async function reloadAll() {
+  await loadTree()
+  await loadBookmarks()
+  if (activeId.value) {
+    const n = allNodes.value.find((x) => x.id === activeId.value)
+    if (n) onSelectNode(n)
+  }
+}
+
+// ====== 全局点击关闭右键菜单 ======
+function onGlobalClick() {
+  showTreeMenu.value = false
+}
+
+// ====== 生命周期 ======
+let offMenuAction = null
+let offReload = null
 
 onMounted(async () => {
-  // 注册菜单事件监听 —— 必须在最前面，确保菜单立即可用
-  try { window.api.onMenuAction((action) => handleMenu(action)) } catch (e) { console.error('onMenuAction register failed:', e) }
-  try { window.api.onReload(async () => { await loadTree(); if (allNodes.value.length > 0) { const roots = allNodes.value.filter(n => !n.parent_id); if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) } } }) } catch (e) { console.error('onReload register failed:', e) }
-  window.addEventListener('tree-context-menu', onCtxMenu)
-  window.addEventListener('click', closeMenu)
-  darkMode.value = localStorage.getItem('lt-dark') === '1'
+  // === 关键: onMenuAction 必须最先注册 ===
   try {
-    await loadTree()
-    if (allNodes.value.length > 0) { const roots = allNodes.value.filter(n => !n.parent_id); if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) } }
-  } catch (e) { console.error('loadTree error:', e) }
+    offMenuAction = window.api.onMenuAction((action) => {
+      handleMenu(action)
+    })
+  } catch (e) {
+    console.error('onMenuAction registration error:', e)
+  }
+
+  try {
+    offReload = window.api.onReload(async () => {
+      await reloadAll()
+    })
+  } catch (e) {
+    console.error('onReload registration error:', e)
+  }
+
+  document.addEventListener('click', onGlobalClick)
+
+  // === 异步加载 ===
+  await loadTree()
+  await loadBookmarks()
+
+  // 选中第一个节点
+  if (rootNodes.value.length > 0) {
+    await onSelectNode(rootNodes.value[0])
+    expandedSet.value.add(rootNodes.value[0].id)
+    expandedSet.value = new Set(expandedSet.value)
+  }
+
+  statusMessage.value = '就绪'
 })
 
-onUnmounted(() => {
-  window.removeEventListener('tree-context-menu', onCtxMenu)
-  window.removeEventListener('click', closeMenu)
+onBeforeUnmount(() => {
+  if (offMenuAction) { try { offMenuAction() } catch {} }
+  if (offReload) { try { offReload() } catch {} }
+  document.removeEventListener('click', onGlobalClick)
 })
 </script>
