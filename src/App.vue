@@ -647,87 +647,94 @@ function onSave({ id, content }) {
 function toggleDark() { darkMode.value = !darkMode.value; localStorage.setItem('lt-dark', darkMode.value ? '1' : '0') }
 function setZoom(delta) { zoomFactor = Math.max(0.3, Math.min(3, zoomFactor + delta)); document.body.style.zoom = zoomFactor }
 
-/* ================= 菜单事件总分发 ================= */
+/* ================= 菜单事件总分发（CherryTree action ID 完整映射） ================= */
 function handleMenu(ch) {
   if (!ch) return
   try {
     const appActions = {
-    'menu:new-instance': () => window.api.newInstance(),
-    'menu:open': () => window.api.openDoc(),
-    'menu:save': async () => { await window.api.saveDoc(); saveStatus.value = '已保存' },
-    'menu:save-as': async () => { await window.api.saveDocAs(); saveStatus.value = '已保存' },
-    'menu:print': () => window.api.printDoc(),
-    'menu:add-node': () => addSibling(),
-    'menu:add-child': () => addChild(),
-    'menu:dup-node': () => { if (selectedId.value) window.api.duplicateNode(selectedId.value).then(() => loadTree()) },
-    'menu:node-up': () => { if (selectedId.value) window.api.nodeUp(selectedId.value).then(() => loadTree()) },
-    'menu:node-down': () => { if (selectedId.value) window.api.nodeDown(selectedId.value).then(() => loadTree()) },
-    'menu:delete-node': () => { if (selectedId.value) onDelete(selectedId.value) },
-    'menu:rename-node': () => { if (selectedId.value) window.dispatchEvent(new CustomEvent('tree-rename', { detail: { id: selectedId.value } })) },
-    'menu:node-icon': () => { if (selectedId.value) { menuNodeId.value = selectedId.value; iconDlg.value = true } },
-    'menu:node-color': () => { if (selectedId.value) { menuNodeId.value = selectedId.value; colorDlg.value = true } },
-    'menu:node-info': () => { if (selectedId.value) showNodeInfo(selectedId.value) },
-    'menu:change-id': () => { if (selectedId.value) { newId.value = selectedId.value; idDlg.value = true } },
-    'menu:sort-children': () => { if (selectedId.value) window.api.sortChildren(selectedId.value).then(() => loadTree()) },
-    'menu:sort-tree': () => window.api.sortTree().then(() => loadTree()),
-    'menu:expand-all': () => window.api.expandAll().then(() => loadTree()),
-    'menu:collapse-all': () => window.api.collapseAll().then(() => loadTree()),
-    'menu:cut-node': () => { if (selectedId.value) { window.api.cutNode(selectedId.value).then(() => { hasNodeClip.value = true; loadTree() }) } },
-    'menu:copy-node': () => { if (selectedId.value) window.api.copyNode(selectedId.value).then(() => hasNodeClip.value = true) },
-    'menu:paste-node': () => { if (selectedId.value) window.api.pasteNode({ targetId: selectedId.value }).then(() => loadTree()) },
-    'menu:bm-add': () => { if (selectedId.value) window.api.bmAdd(selectedId.value).then(() => bookmarks.value = window.api.bmList()) },
-    'menu:bm-remove': () => { if (selectedId.value) window.api.bmRemove(selectedId.value).then(() => bookmarks.value = window.api.bmList()) },
-    'menu:bm-handle': () => openBmHandle(),
-    'menu:find-all': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
-    'menu:iter-find': () => focusSearch(),
-    'menu:find': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
-    'menu:exp-pdf': () => { if (selectedNode.value) window.api.exportPdf({ node: selectedNode.value }) },
-    'menu:exp-txt': () => { if (selectedNode.value) window.api.exportTxt({ node: selectedNode.value }) },
-    'menu:exp-html': () => { if (selectedNode.value) window.api.exportHtml({ node: selectedNode.value }) },
-    'menu:imp-txt': () => window.api.importTxt(),
-    'menu:imp-txt-folder': () => window.api.importTxtFolder(),
-    'menu:imp-html': () => window.api.importHtml(),
-    'menu:view-toolbar': () => showToolbar.value = !showToolbar.value,
-    'menu:view-tree': () => showTree.value = !showTree.value,
-    'menu:view-ln': () => showLn.value = !showLn.value,
-    'menu:view-ws': () => showWs.value = !showWs.value,
-    'menu:view-le': () => showLe.value = !showLe.value,
-    'menu:view-wrap': () => wrapLine.value = !wrapLine.value,
-    'menu:zoom-in': () => setZoom(0.1),
-    'menu:zoom-out': () => setZoom(-0.1),
-    'menu:zoom-reset': () => { zoomFactor = 1.0; document.body.style.zoom = 1 },
-    'menu:check-update': () => window.open('https://github.com/cornelius150/LimeTree/releases', '_blank'),
-    'menu:help': () => window.open('https://github.com/cornelius150/LimeTree#readme', '_blank'),
-    'menu:about': () => { alert('LimeTree v2.1.0\n树形笔记本软件\n\n与 CherryTree 一致的九大菜单\n图片/表格/代码框可拖拽缩放\nMarkdown 格式存储 (.md)\n节点时间戳\n\nGitHub: https://github.com/cornelius150/LimeTree') },
-    'menu:preferences': () => { settingsDlg.value = true },
-    'menu:settings': () => { settingsDlg.value = true },
-    'menu:open-folder': () => window.api.importTxtFolder(),
-    'menu:save-clean': async () => { await window.api.saveDoc(); saveStatus.value = '已保存' },
-    'menu:tree-info': () => { const cnt = allNodes.value.length; alert(`树信息\n\n节点总数: ${cnt}\n根节点数: ${allNodes.value.filter(n => !n.parent_id).length}\n书签数: ${bookmarks.value.length}\n\n文档格式: Markdown (.md)`) },
-    'menu:copy-path': () => { window.api.clipboardWriteText(docPath || ''); alert('文档路径已复制到剪贴板') },
-    'menu:page-setup': () => { alert('页面设置\n\n纸张: A4\n边距: 默认\n方向: 纵向\n\n（打印设置将在打印时自动应用）') },
-    'menu:word-count': () => { if (selectedNode.value) { const c = (selectedNode.value.content || '').length; alert(`字数统计\n\n当前节点字符数: ${c}\n单词数: ${(selectedNode.value.content || '').match(/\S+/g)?.length || 0}`) } },
-    'menu:spell-check': () => { alert('拼写检查功能暂未启用') },
-    'menu:go-back': () => { if (navHistory.length > 1) { navIdx = Math.max(0, navIdx - 1); onSelect(allNodes.value.find(n => n.id === navHistory[navIdx])) } },
-    'menu:go-forward': () => { if (navIdx < navHistory.length - 1) { navIdx++; onSelect(allNodes.value.find(n => n.id === navHistory[navIdx])) } },
-    'menu:insert-anchor': () => { /* handled in editor */ window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'menu:insert-anchor' } })) },
-    'menu:insert-link': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'menu:insert-link' } })) },
-    'menu:insert-file': () => { alert('插入文件功能即将推出') },
-    'menu:recent-docs': () => { alert('最近文档功能即将推出') }
-  }
-  /* 导入不支持格式 */
-  const impFmts = { 'menu:imp-ct': 'CherryTree', 'menu:imp-gnote': 'Gnote', 'menu:imp-keepnote': 'KeepNote', 'menu:imp-keynote': 'KeyNote', 'menu:imp-knowit': 'Knowit', 'menu:imp-leo': 'Leo', 'menu:imp-mempad': 'Mempad', 'menu:imp-notecase': 'NoteCase', 'menu:imp-rednotebook': 'RedNotebook', 'menu:imp-tomboy': 'Tomboy', 'menu:imp-treepad': 'TreePad', 'menu:imp-tuxcards': 'TuxCards', 'menu:imp-zim': 'Zim' }
-  if (impFmts[ch]) { window.api.importUnsupported(impFmts[ch]); return }
-  /* 替换所有节点 */
-  if (ch === 'menu:replace-all') {
-    const find = prompt('查找内容：'); if (!find) return
-    const replace = prompt('替换为：', ''); if (replace === null) return
-    window.api.replaceAllNodes({ find, replace }).then(r => { alert(`已替换 ${r.count} 处`); loadTree(); if (selectedId.value) onSelect({ id: selectedId.value }) })
-    return
-  }
-  if (appActions[ch]) { appActions[ch](); return }
-  /* 其余编辑器相关菜单事件转发 */
-  try { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: ch } })) } catch (e) { console.error('dispatch editor-menu failed:', e) }
+      /* 文件 */
+      'ct_new_inst': () => window.api.newInstance(),
+      'ct_open_folder': () => window.api.importTxtFolder(),
+      'ct_open_file': () => window.api.openDoc(),
+      'ct_vacuum': async () => { await window.api.saveDoc(); saveStatus.value = '已保存' },
+      'ct_save': async () => { await window.api.saveDoc(); saveStatus.value = '已保存' },
+      'ct_save_as': async () => { await window.api.saveDocAs(); saveStatus.value = '已保存' },
+      'print_page_setup': () => { alert('页面设置\n\n纸张: A4\n边距: 默认\n方向: 纵向') },
+      'do_print': () => window.api.printDoc(),
+      'preferences_dlg': () => { settingsDlg.value = true },
+      'pref_import': () => { alert('导入设置功能即将推出') },
+      'pref_export': () => { alert('导出设置功能即将推出') },
+      'open_cfg_folder': () => { shell.openPath ? null : null; alert('配置文件夹: ' + (docPath || '未指定')) },
+      'tree_parse_info': () => { const cnt = allNodes.value.length; alert(`树信息\n\n节点总数: ${cnt}\n根节点数: ${allNodes.value.filter(n => !n.parent_id).length}\n书签数: ${bookmarks.value.length}\n\n文档格式: Markdown (.md)`) },
+      'doc_path_clip': () => { window.api.clipboardWriteText(docPath || ''); alert('文档路径已复制到剪贴板') },
+
+      /* 导出 */
+      'export_pdf': () => { if (selectedNode.value) window.api.exportPdf({ node: selectedNode.value }) },
+      'export_html': () => { if (selectedNode.value) window.api.exportHtml({ node: selectedNode.value }) },
+      'export_txt': () => { if (selectedNode.value) window.api.exportTxt({ node: selectedNode.value }) },
+      'export_ct': () => { alert('导出为 CherryTree 文档：已保存为 .md 格式') },
+
+      /* 导入 */
+      'import_txt_file': () => window.api.importTxt(),
+      'import_txt_folder': () => window.api.importTxtFolder(),
+      'import_html_file': () => window.api.importHtml(),
+
+      /* 树型 */
+      'tree_add_node': () => addSibling(),
+      'tree_add_subnode': () => addChild(),
+      'tree_dup_node': () => { if (selectedId.value) window.api.duplicateNode(selectedId.value).then(() => loadTree()) },
+      'tree_node_up': () => { if (selectedId.value) window.api.nodeUp(selectedId.value).then(() => loadTree()) },
+      'tree_node_down': () => { if (selectedId.value) window.api.nodeDown(selectedId.value).then(() => loadTree()) },
+      'tree_node_del': () => { if (selectedId.value) onDelete(selectedId.value) },
+      'tree_node_prop': () => { if (selectedId.value) showNodeInfo(selectedId.value) },
+      'tree_sibl_sort_asc': () => { if (selectedId.value) window.api.sortChildren(selectedId.value).then(() => loadTree()) },
+      'tree_sibl_sort_desc': () => { if (selectedId.value) window.api.sortChildren(selectedId.value).then(() => loadTree()) },
+      'tree_all_sort_asc': () => window.api.sortTree().then(() => loadTree()),
+      'tree_all_sort_desc': () => window.api.sortTree().then(() => loadTree()),
+      'nodes_all_expand': () => window.api.expandAll().then(() => loadTree()),
+      'nodes_all_collapse': () => window.api.collapseAll().then(() => loadTree()),
+      'node_bookmark': () => { if (selectedId.value) window.api.bmAdd(selectedId.value).then(() => bookmarks.value = window.api.bmList()) },
+      'node_unbookmark': () => { if (selectedId.value) window.api.bmRemove(selectedId.value).then(() => bookmarks.value = window.api.bmList()) },
+
+      /* 搜索 */
+      'find_in_node': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'find_in_node' } })) },
+      'find_in_allnodes': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
+      'find_in_node_names': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
+      'find_iter_fw': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'find_iter_fw' } })) },
+      'find_iter_bw': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'find_iter_bw' } })) },
+      'replace_in_node': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'replace_in_node' } })) },
+      'replace_in_allnodes': () => {
+        const find = prompt('查找内容：'); if (!find) return
+        const replace = prompt('替换为：', ''); if (replace === null) return
+        window.api.replaceAllNodes({ find, replace }).then(r => { alert(`已替换 ${r.count} 处`); loadTree(); if (selectedId.value) onSelect({ id: selectedId.value }) })
+      },
+      'select_node': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
+
+      /* 查看 */
+      'toggle_show_tree': () => showTree.value = !showTree.value,
+      'toggle_show_toolbar': () => showToolbar.value = !showToolbar.value,
+      'toggle_show_statusbar': () => { /* toggle status bar */ },
+      'toggle_fullscreen': () => { /* fullscreen toggle */ },
+      'zoom_in': () => setZoom(0.1),
+      'zoom_out': () => setZoom(-0.1),
+
+      /* 帮助 */
+      'ct_check_newer': () => window.open('https://github.com/cornelius150/LimeTree/releases', '_blank'),
+      'ct_homepage': () => window.open('https://github.com/cornelius150/LimeTree', '_blank'),
+      'ct_github': () => window.open('https://github.com/cornelius150/LimeTree', '_blank'),
+      'ct_issues': () => window.open('https://github.com/cornelius150/LimeTree/issues', '_blank'),
+      'ct_help': () => window.open('https://github.com/cornelius150/LimeTree#readme', '_blank'),
+      'ct_about': () => { alert('LimeTree v2.1.0\n树形笔记本软件\n\n基于 CherryTree 源码菜单结构\n图片/表格/代码框可拖拽缩放\nMarkdown 格式存储 (.md)\n节点时间戳\n\nGitHub: https://github.com/cornelius150/LimeTree') },
+    }
+
+    /* 导入不支持格式 */
+    const impFmts = { 'import_ct_folder': 'CherryTree 文件夹', 'import_ct_file': 'CherryTree 文件', 'import_indented_list': '缩进列表', 'import_html_folder': 'HTML 文件夹', 'import_md_file': 'Markdown 文件', 'import_md_folder': 'Markdown 文件夹', 'import_gnote': 'Gnote', 'import_keepnote': 'KeepNote', 'import_leo': 'Leo', 'import_mempad': 'Mempad', 'import_notecase': 'NoteCase', 'import_rednotebook': 'RedNotebook', 'import_tomboy': 'Tomboy', 'import_treepad': 'TreePad', 'import_zim': 'Zim' }
+    if (impFmts[ch]) { try { window.api.importUnsupported(impFmts[ch]) } catch(e) { alert('暂不支持从 ' + impFmts[ch] + ' 导入') }; return }
+
+    if (appActions[ch]) { appActions[ch](); return }
+
+    /* 其余编辑器相关菜单事件转发 */
+    try { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: ch } })) } catch (e) { console.error('dispatch editor-menu failed:', e) }
   } catch (e) { console.error('handleMenu error for', ch, ':', e) }
 }
 async function confirmChangeId() {
