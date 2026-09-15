@@ -470,12 +470,20 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     /* ---------- 文件 ---------- */
     { label: '文件(F)', submenu: [
-      M('新建笔记实例...', 'Ctrl+Alt+N', 'menu:new-instance'),
-      M('打开笔记...', 'Ctrl+O', 'menu:open'),
-      M('保存笔记', 'Ctrl+S', 'menu:save'),
-      M('另存为笔记...', 'Ctrl+Shift+S', 'menu:save-as'),
+      M('新建实例...', 'Ctrl+Alt+N', 'menu:new-instance'),
+      M('打开笔记文件...', 'Ctrl+O', 'menu:open'),
+      M('最近文档', null, 'menu:recent-docs', { type: 'submenu', submenu: [] }),
       { type: 'separator' },
+      M('保存并清理', null, 'menu:save'),
+      M('保存', 'Ctrl+S', 'menu:save'),
+      M('另存为...', 'Ctrl+Shift+S', 'menu:save-as'),
+      { type: 'separator' },
+      M('页面设置...', null, 'menu:page-setup'),
       M('打印...', 'Ctrl+P', 'menu:print'),
+      { type: 'separator' },
+      M('设置', null, 'menu:settings', { type: 'submenu', submenu: [M('首选项...', null, 'menu:preferences')] }),
+      M('树信息...', null, 'menu:tree-info'),
+      M('文档路径复制到剪贴板', null, 'menu:copy-path'),
       { type: 'separator' },
       { label: '退出', accelerator: 'Ctrl+Q', click: () => app.quit() }
     ]},
@@ -487,7 +495,7 @@ function buildMenu() {
       M('剪切', 'Ctrl+X', 'menu:cut'),
       M('复制', 'Ctrl+C', 'menu:copy'),
       M('粘贴', 'Ctrl+V', 'menu:paste'),
-      M('粘贴为富文本', null, 'menu:paste-rich'),
+      M('粘贴为纯文本', 'Ctrl+Alt+P', 'menu:paste-plain'),
       { type: 'separator' },
       M('重复行', 'Ctrl+D', 'menu:dup-line'),
       M('删除行', 'Ctrl+K', 'menu:del-line'),
@@ -500,74 +508,22 @@ function buildMenu() {
       { type: 'separator' },
       M('格式化表格...', null, 'menu:format-table')
     ]},
-    /* ---------- 搜索 ---------- */
-    { label: '搜索(S)', submenu: [
-      M('在节点中查找...', 'Ctrl+F', 'menu:find'),
-      M('在所有节点中查找...', 'Ctrl+Shift+F', 'menu:find-all'),
-      M('在节点中查找下一个', 'F3', 'menu:find-next'),
-      M('在节点中查找上一个', 'Shift+F3', 'menu:find-prev'),
+    /* ---------- 插入 ---------- */
+    { label: '插入(I)', submenu: [
+      M('插入图片...', null, 'menu:insert-image'),
+      M('插入超链接...', null, 'menu:insert-link'),
+      M('插入文件...', null, 'menu:insert-file'),
       { type: 'separator' },
-      M('在选中文本中查找...', 'Ctrl+Alt+F', 'menu:find-selected'),
-      M('在所有节点的选中文本中查找...', 'Ctrl+Alt+A', 'menu:find-selected-all'),
+      M('插入表格...', null, 'menu:insert-table'),
+      M('插入代码框...', null, 'menu:insert-code'),
+      M('插入水平线', null, 'menu:insert-hr'),
+      M('插入时间戳', 'Ctrl+;', 'menu:timestamp'),
       { type: 'separator' },
-      M('替换节点中的内容...', 'Ctrl+H', 'menu:replace'),
-      M('替换所有节点中的内容...', 'Ctrl+Shift+H', 'menu:replace-all'),
-      { type: 'separator' },
-      M('迭代器：按名称查找节点', 'Ctrl+Shift+L', 'menu:iter-find'),
-      M('迭代器：查找下一个节点', null, 'menu:iter-next'),
-      { type: 'separator' },
-      M('搜索一个文件夹...', null, 'menu:search-folder')
+      M('插入锚点...', null, 'menu:insert-anchor'),
+      M('插入待办事项', null, 'menu:todo-list')
     ]},
-    /* ---------- 视图 ---------- */
-    { label: '视图(V)', submenu: [
-      M('显示工具栏', null, 'menu:view-toolbar', { type: 'checkbox', checked: true }),
-      M('显示树状视图', null, 'menu:view-tree', { type: 'checkbox', checked: true }),
-      M('显示行号', null, 'menu:view-ln', { type: 'checkbox', checked: false }),
-      M('显示空白字符', null, 'menu:view-ws', { type: 'checkbox', checked: false }),
-      M('显示行结尾字符', null, 'menu:view-le', { type: 'checkbox', checked: false }),
-      { type: 'separator' },
-      M('自动换行', 'Ctrl+L', 'menu:view-wrap', { type: 'checkbox', checked: true }),
-      { type: 'separator' },
-      M('折叠全部节点', 'Ctrl+Alt+C', 'menu:collapse-all'),
-      M('展开全部节点', 'Ctrl+Alt+E', 'menu:expand-all'),
-      { type: 'separator' },
-      M('增大字体', 'Ctrl+=', 'menu:zoom-in'),
-      M('减小字体', 'Ctrl+-', 'menu:zoom-out'),
-      M('重置字体大小', 'Ctrl+0', 'menu:zoom-reset')
-    ]},
-    /* ---------- 导入/导出 ---------- */
-    { label: '导入/导出(D)', submenu: [
-      M('从 HTML 文件导入节点...', null, 'menu:imp-html'),
-      M('从 TXT 文件导入节点...', null, 'menu:imp-txt'),
-      M('从 TXT 文件夹导入节点...', null, 'menu:imp-txt-folder'),
-      { type: 'separator' },
-      M('从 CherryTree 文档导入...', null, 'menu:imp-ct'),
-      M('从 Gnote 文件夹导入...', null, 'menu:imp-gnote'),
-      M('从 KeepNote 文件夹导入...', null, 'menu:imp-keepnote'),
-      M('从 KeyNote 文件导入...', null, 'menu:imp-keynote'),
-      M('从 Knowit 文件导入...', null, 'menu:imp-knowit'),
-      M('从 Leo 文件导入...', null, 'menu:imp-leo'),
-      M('从 Mempad 文件导入...', null, 'menu:imp-mempad'),
-      M('从 NoteCase 文件导入...', null, 'menu:imp-notecase'),
-      M('从 RedNotebook 文件夹导入...', null, 'menu:imp-rednotebook'),
-      M('从 Tomboy 文件夹导入...', null, 'menu:imp-tomboy'),
-      M('从 TreePad 文件导入...', null, 'menu:imp-treepad'),
-      M('从 TuxCards 文件导入...', null, 'menu:imp-tuxcards'),
-      M('从 Zim 文件夹导入...', null, 'menu:imp-zim'),
-      { type: 'separator' },
-      M('导出为 PDF...', null, 'menu:exp-pdf'),
-      M('导出为纯文本...', null, 'menu:exp-txt'),
-      M('导出为 HTML...', null, 'menu:exp-html')
-    ]},
-    /* ---------- 书签 ---------- */
-    { label: '书签(B)', submenu: [
-      M('添加节点到书签', 'Ctrl+Shift+B', 'menu:bm-add'),
-      M('从书签中删除节点', null, 'menu:bm-remove'),
-      { type: 'separator' },
-      M('处理书签...', null, 'menu:bm-handle')
-    ]},
-    /* ---------- 格式 ---------- */
-    { label: '格式(O)', submenu: [
+    /* ---------- 格式化 ---------- */
+    { label: '格式化(O)', submenu: [
       M('文本颜色...', 'Ctrl+Shift+T', 'menu:text-color'),
       M('文本背景色...', 'Ctrl+Shift+H', 'menu:bg-color'),
       { type: 'separator' },
@@ -588,13 +544,39 @@ function buildMenu() {
       M('降级列表项', 'Ctrl+Alt+-', 'menu:list-dec'),
       M('升级列表项', 'Ctrl+Alt+=', 'menu:list-inc'),
       { type: 'separator' },
-      M('粘贴为纯文本', 'Ctrl+Alt+P', 'menu:paste-plain'),
-      M('插入时间戳', 'Ctrl+;', 'menu:timestamp'),
-      { type: 'separator' },
       M('删除格式', 'Ctrl+Shift+R', 'menu:remove-format')
     ]},
-    /* ---------- 树 ---------- */
-    { label: '树(T)', submenu: [
+    /* ---------- 工具 ---------- */
+    { label: '工具(T)', submenu: [
+      M('首选项...', null, 'menu:preferences'),
+      { type: 'separator' },
+      M('检查拼写', null, 'menu:spell-check', { type: 'checkbox', checked: false }),
+      M('字数统计...', null, 'menu:word-count'),
+      { type: 'separator' },
+      M('导出为 PDF...', null, 'menu:exp-pdf'),
+      M('导出为纯文本...', null, 'menu:exp-txt'),
+      M('导出为 HTML...', null, 'menu:exp-html'),
+      { type: 'separator' },
+      M('从 TXT 文件导入节点...', null, 'menu:imp-txt'),
+      M('从 TXT 文件夹导入节点...', null, 'menu:imp-txt-folder'),
+      M('从 HTML 文件导入节点...', null, 'menu:imp-html'),
+      { type: 'separator' },
+      M('从 CherryTree 文档导入...', null, 'menu:imp-ct'),
+      M('从 Gnote 文件夹导入...', null, 'menu:imp-gnote'),
+      M('从 KeepNote 文件夹导入...', null, 'menu:imp-keepnote'),
+      M('从 KeyNote 文件导入...', null, 'menu:imp-keynote'),
+      M('从 Knowit 文件导入...', null, 'menu:imp-knowit'),
+      M('从 Leo 文件导入...', null, 'menu:imp-leo'),
+      M('从 Mempad 文件导入...', null, 'menu:imp-mempad'),
+      M('从 NoteCase 文件导入...', null, 'menu:imp-notecase'),
+      M('从 RedNotebook 文件夹导入...', null, 'menu:imp-rednotebook'),
+      M('从 Tomboy 文件夹导入...', null, 'menu:imp-tomboy'),
+      M('从 TreePad 文件导入...', null, 'menu:imp-treepad'),
+      M('从 TuxCards 文件导入...', null, 'menu:imp-tuxcards'),
+      M('从 Zim 文件夹导入...', null, 'menu:imp-zim')
+    ]},
+    /* ---------- 树型 ---------- */
+    { label: '树型(T)', submenu: [
       M('添加节点', 'Ctrl+N', 'menu:add-node'),
       M('添加子节点', 'Ctrl+J', 'menu:add-child'),
       M('重复节点', null, 'menu:dup-node'),
@@ -615,6 +597,48 @@ function buildMenu() {
       M('节点信息...', null, 'menu:node-info'),
       { type: 'separator' },
       M('删除节点', null, 'menu:delete-node')
+    ]},
+    /* ---------- 搜索 ---------- */
+    { label: '搜索(S)', submenu: [
+      M('在节点中查找...', 'Ctrl+F', 'menu:find'),
+      M('在所有节点中查找...', 'Ctrl+Shift+F', 'menu:find-all'),
+      M('在节点中查找下一个', 'F3', 'menu:find-next'),
+      M('在节点中查找上一个', 'Shift+F3', 'menu:find-prev'),
+      { type: 'separator' },
+      M('在选中文本中查找...', 'Ctrl+Alt+F', 'menu:find-selected'),
+      M('在所有节点的选中文本中查找...', 'Ctrl+Alt+A', 'menu:find-selected-all'),
+      { type: 'separator' },
+      M('替换节点中的内容...', 'Ctrl+H', 'menu:replace'),
+      M('替换所有节点中的内容...', 'Ctrl+Shift+H', 'menu:replace-all'),
+      { type: 'separator' },
+      M('迭代器：按名称查找节点', 'Ctrl+Shift+L', 'menu:iter-find'),
+      M('迭代器：查找下一个节点', null, 'menu:iter-next'),
+      { type: 'separator' },
+      M('搜索一个文件夹...', null, 'menu:search-folder')
+    ]},
+    /* ---------- 查看 ---------- */
+    { label: '查看(V)', submenu: [
+      M('显示工具栏', null, 'menu:view-toolbar', { type: 'checkbox', checked: true }),
+      M('显示树状视图', null, 'menu:view-tree', { type: 'checkbox', checked: true }),
+      M('显示行号', null, 'menu:view-ln', { type: 'checkbox', checked: false }),
+      M('显示空白字符', null, 'menu:view-ws', { type: 'checkbox', checked: false }),
+      M('显示行结尾字符', null, 'menu:view-le', { type: 'checkbox', checked: false }),
+      { type: 'separator' },
+      M('自动换行', 'Ctrl+L', 'menu:view-wrap', { type: 'checkbox', checked: true }),
+      { type: 'separator' },
+      M('折叠全部节点', 'Ctrl+Alt+C', 'menu:collapse-all'),
+      M('展开全部节点', 'Ctrl+Alt+E', 'menu:expand-all'),
+      { type: 'separator' },
+      M('增大字体', 'Ctrl+=', 'menu:zoom-in'),
+      M('减小字体', 'Ctrl+-', 'menu:zoom-out'),
+      M('重置字体大小', 'Ctrl+0', 'menu:zoom-reset')
+    ]},
+    /* ---------- 书签 ---------- */
+    { label: '书签(B)', submenu: [
+      M('添加节点到书签', 'Ctrl+Shift+B', 'menu:bm-add'),
+      M('从书签中删除节点', null, 'menu:bm-remove'),
+      { type: 'separator' },
+      M('处理书签...', null, 'menu:bm-handle')
     ]},
     /* ---------- 帮助 ---------- */
     { label: '帮助(H)', submenu: [
