@@ -568,7 +568,8 @@ function setZoom(delta) { zoomFactor = Math.max(0.3, Math.min(3, zoomFactor + de
 /* ================= 菜单事件总分发 ================= */
 function handleMenu(ch) {
   if (!ch) return
-  const appActions = {
+  try {
+    const appActions = {
     'menu:new-instance': () => window.api.newInstance(),
     'menu:open': () => window.api.openDoc(),
     'menu:save': async () => { await window.api.saveDoc(); saveStatus.value = '已保存' },
@@ -644,7 +645,8 @@ function handleMenu(ch) {
   }
   if (appActions[ch]) { appActions[ch](); return }
   /* 其余编辑器相关菜单事件转发 */
-  window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: ch } }))
+  try { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: ch } })) } catch (e) { console.error('dispatch editor-menu failed:', e) }
+  } catch (e) { console.error('handleMenu error for', ch, ':', e) }
 }
 async function confirmChangeId() {
   if (!newId.value || !menuNodeId.value && !selectedId.value) return
@@ -656,13 +658,16 @@ async function confirmChangeId() {
 /* ================= 注册单通道菜单事件 ================= */
 
 onMounted(async () => {
-  darkMode.value = localStorage.getItem('lt-dark') === '1'
-  await loadTree()
-  if (allNodes.value.length > 0) { const roots = allNodes.value.filter(n => !n.parent_id); if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) } }
+  // 注册菜单事件监听 —— 必须在最前面，确保菜单立即可用
+  try { window.api.onMenuAction((action) => handleMenu(action)) } catch (e) { console.error('onMenuAction register failed:', e) }
+  try { window.api.onReload(async () => { await loadTree(); if (allNodes.value.length > 0) { const roots = allNodes.value.filter(n => !n.parent_id); if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) } } }) } catch (e) { console.error('onReload register failed:', e) }
   window.addEventListener('tree-context-menu', onCtxMenu)
   window.addEventListener('click', closeMenu)
-  window.api.onMenuAction((action) => handleMenu(action))
-  window.api.onReload(async () => { await loadTree(); if (allNodes.value.length > 0) { const roots = allNodes.value.filter(n => !n.parent_id); if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) } } })
+  darkMode.value = localStorage.getItem('lt-dark') === '1'
+  try {
+    await loadTree()
+    if (allNodes.value.length > 0) { const roots = allNodes.value.filter(n => !n.parent_id); if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) } }
+  } catch (e) { console.error('loadTree error:', e) }
 })
 
 onUnmounted(() => {
