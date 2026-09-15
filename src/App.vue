@@ -383,28 +383,7 @@ async function confirmChangeId() {
   if (r.success) { idDlg.value = false; await loadTree() } else { alert(r.reason || '更改 ID 失败') }
 }
 
-/* ================= 注册全部菜单 channel ================= */
-const menuChannels = [
-  'menu:new-instance','menu:open','menu:save','menu:save-as','menu:print',
-  'menu:undo','menu:redo','menu:cut','menu:copy','menu:paste','menu:paste-plain','menu:paste-rich',
-  'menu:dup-line','menu:del-line','menu:line-up','menu:line-down','menu:format-table',
-  'menu:find','menu:find-all','menu:find-next','menu:find-prev','menu:find-selected','menu:find-selected-all',
-  'menu:replace','menu:replace-all','menu:iter-find','menu:iter-next','menu:search-folder',
-  'menu:view-toolbar','menu:view-tree','menu:view-ln','menu:view-ws','menu:view-le','menu:view-wrap',
-  'menu:collapse-all','menu:expand-all','menu:zoom-in','menu:zoom-out','menu:zoom-reset',
-  'menu:imp-html','menu:imp-txt','menu:imp-txt-folder',
-  'menu:imp-ct','menu:imp-gnote','menu:imp-keepnote','menu:imp-keynote','menu:imp-knowit','menu:imp-leo','menu:imp-mempad','menu:imp-notecase','menu:imp-rednotebook','menu:imp-tomboy','menu:imp-treepad','menu:imp-tuxcards','menu:imp-zim',
-  'menu:exp-pdf','menu:exp-txt','menu:exp-html',
-  'menu:bm-add','menu:bm-remove','menu:bm-handle',
-  'menu:text-color','menu:bg-color','menu:bold','menu:italic','menu:underline','menu:strike',
-  'menu:small','menu:normal','menu:large','menu:huge',
-  'menu:n-list','menu:b-list','menu:todo-list','menu:list-dec','menu:list-inc',
-  'menu:paste-plain','menu:timestamp','menu:remove-format',
-  'menu:add-node','menu:add-child','menu:dup-node','menu:change-id','menu:sort-children','menu:sort-tree',
-  'menu:node-up','menu:node-down','menu:rename-node','menu:node-icon','menu:node-color','menu:inherit-syntax','menu:node-info','menu:delete-node',
-  'menu:cut-node','menu:copy-node','menu:paste-node',
-  'menu:check-update','menu:help','menu:about'
-]
+/* ================= 注册单通道菜单事件 ================= */
 
 onMounted(async () => {
   darkMode.value = localStorage.getItem('lt-dark') === '1'
@@ -412,7 +391,7 @@ onMounted(async () => {
   if (allNodes.value.length > 0) { const roots = allNodes.value.filter(n => !n.parent_id); if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) } }
   window.addEventListener('tree-context-menu', onCtxMenu)
   window.addEventListener('click', closeMenu)
-  menuChannels.forEach(ch => window.api.onMenu(ch, () => handleMenu(ch)))
+  window.api.onMenuAction((action) => handleMenu(action))
   window.api.onReload(async () => { await loadTree(); if (allNodes.value.length > 0) { const roots = allNodes.value.filter(n => !n.parent_id); if (roots.length > 0) { const kids = allNodes.value.filter(n => n.parent_id === roots[0].id); await onSelect(kids.length > 0 ? kids[0] : roots[0]) } } })
 })
 
