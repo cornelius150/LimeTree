@@ -1,98 +1,169 @@
-import CodeBlock from '@tiptap/extension-code-block'
-import { PluginKey } from '@tiptap/pm/state'
+/**
+ * ResizableCodeBlock - TipTap 代码框扩展，支持鼠标拖拽右下角调整高度
+ * 包含语言标签栏、可选行号、右下角拖拽手柄
+ */
+import { Node, mergeAttributes } from '@tiptap/core'
 
-// Resizable Code Block with language label + optional line numbers + drag-to-resize
-export const ResizableCodeBlock = CodeBlock.extend({
+export const ResizableCodeBlock = Node.create({
+  name: 'resizableCodeBlock',
+
+  inline: false,
+  group: 'block',
+  draggable: true,
+  isolating: true,
+  atom: true,
+
   addAttributes() {
     return {
-      ...this.parent?.(),
-      language: { default: null, renderHTML: attrs => attrs.language ? { 'data-language': attrs.language } : {} },
-      boxHeight: { default: 200, renderHTML: () => ({}) },
-      showLn: { default: false, renderHTML: () => ({}) }
+      language: { default: 'text' },
+      height: { default: 200 },
+      showLineNumbers: { default: false },
+      code: { default: '' },
     }
   },
+
+  parseHTML() {
+    return [{ tag: 'pre.lt-code-block' }]
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    return [
+      'pre',
+      mergeAttributes(HTMLAttributes, {
+        class: 'lt-code-block',
+        'data-language': node.attrs.language || 'text',
+        'data-height': node.attrs.height || 200,
+        'data-line-numbers': node.attrs.showLineNumbers ? 'true' : 'false',
+        style: `height: ${node.attrs.height || 200}px;`,
+      }),
+      node.attrs.code || '',
+    ]
+  },
+
+  addCommands() {
+    return {
+      insertResizableCodeBlock:
+        (options) =>
+        ({ commands }) => {
+          return commands.insertContent({
+            type: 'resizableCodeBlock',
+            attrs: {
+              language: options.language || 'text',
+              height: options.height || 200,
+              showLineNumbers: options.showLineNumbers || false,
+              code: options.code || '',
+            },
+          })
+        },
+      updateResizableCodeBlock:
+        (attrs) =>
+        ({ commands }) => {
+          return commands.updateAttributes('resizableCodeBlock', attrs)
+        },
+    }
+  },
+
   addNodeView() {
-    return ({ node, editor, getPos }) => {
+    return ({ node, getPos, editor }) => {
+      // --- 容器 ---
       const wrapper = document.createElement('div')
-      wrapper.className = 'rz-code-wrap'
+      wrapper.classList.add('lt-codebox-wrapper')
+      wrapper.style.position = 'relative'
 
-      // Language label bar
-      const langBar = document.createElement('div')
-      langBar.className = 'rz-code-langbar'
-      langBar.contentEditable = 'false'
+      // --- 语言标签栏 ---
+      const toolbar = document.createElement('div')
+      toolbar.classList.add('lt-codebox-toolbar')
       const langLabel = document.createElement('span')
-      langLabel.className = 'rz-code-lang'
-      langLabel.textContent = node.attrs.language || '代码'
-      langBar.appendChild(langLabel)
-      wrapper.appendChild(langBar)
+      langLabel.classList.add('lt-codebox-lang')
+      langLabel.textContent = node.attrs.language || 'text'
+      const lnLabel = document.createElement('span')
+      lnLabel.classList.add('lt-codebox-ln')
+      lnLabel.textContent = node.attrs.showLineNumbers ? '行号: 开' : '行号: 关'
+      toolbar.appendChild(langLabel)
+      toolbar.appendChild(lnLabel)
+      wrapper.appendChild(toolbar)
 
-      const box = document.createElement('div')
-      box.className = 'rz-code-box'
-      wrapper.appendChild(box)
+      // --- 代码文本域 ---
+      const textarea = document.createElement('textarea')
+      textarea.classList.add('lt-codebox-textarea')
+      textarea.value = node.attrs.code || ''
+      textarea.style.height = (node.attrs.height || 200) + 'px'
+      textarea.style.width = '100%'
+      textarea.spellcheck = false
+      wrapper.appendChild(textarea)
 
-      const pre = document.createElement('pre')
-      box.appendChild(pre)
+      // --- 右下角拖拽手柄 ---
+      const handle = document.createElement('div')
+      handle.classList.add('lt-codebox-resize-handle')
+      handle.style.position = 'absolute'
+      handle.style.bottom = '0'
+      handle.style.right = '0'
+      handle.style.width = '14px'
+      handle.style.height = '14px'
+      handle.style.cursor = 'nwse-resize'
+      handle.style.background = 'linear-gradient(135deg, transparent 50%, #4a90d9 50%)'
+      handle.style.zIndex = '10'
+      handle.style.display = 'none'
+      wrapper.appendChild(handle)
 
-      // Line number gutter
-      const gutter = document.createElement('div')
-      gutter.className = 'rz-code-gutter'
-      gutter.contentEditable = 'false'
-      const showLn = node.attrs.showLn || document.body.classList.contains('lt-show-ln')
-      if (showLn) box.classList.add('ln')
-      box.appendChild(gutter)
+      wrapper.addEventListener('mouseenter', () => (handle.style.display = 'block'))
+      wrapper.addEventListener('mouseleave', () => (handle.style.display = 'none'))
 
-      const renderContent = () => {
-        pre.textContent = node.textContent || ''
-        const lines = pre.textContent.split('\n')
-        const visible = node.attrs.showLn || document.body.classList.contains('lt-show-ln')
-        if (visible) {
-          box.classList.add('ln')
-          gutter.innerHTML = lines.map((_, i) => `<div>${i + 1}</div>`).join('')
-          gutter.style.height = box.style.height || (node.attrs.boxHeight || 200) + 'px'
-        } else {
-          box.classList.remove('ln')
-          gutter.innerHTML = ''
+      // --- 拖拽调整高度 ---
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const startY = e.clientY
+        const startH = textarea.offsetHeight
+        const docMove = (ev) => {
+          const newH = Math.max(80, startH + ev.clientY - startY)
+          textarea.style.height = newH + 'px'
         }
-      }
-      renderContent()
-
-      box.style.height = (node.attrs.boxHeight || 200) + 'px'
-
-      // Sync gutter scroll with pre
-      pre.addEventListener('scroll', () => { gutter.scrollTop = pre.scrollTop })
-
-      // Resize handle at bottom-right
-      const rzHandle = document.createElement('div')
-      rzHandle.className = 'rz-code-rz'
-      rzHandle.contentEditable = 'false'
-      box.appendChild(rzHandle)
-
-      let currentHeight = node.attrs.boxHeight || 200
-      rzHandle.addEventListener('mousedown', (e) => {
-        e.preventDefault(); e.stopPropagation()
-        if (!editor.isEditable) return
-        const startY = e.clientY; const startH = box.offsetHeight
-        const onMove = (ev) => { currentHeight = Math.max(80, startH + ev.clientY - startY); box.style.height = currentHeight + 'px'; gutter.style.height = currentHeight + 'px' }
-        const onUp = () => {
-          document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp)
-          editor.chain().focus().command(({ tr }) => { tr.setNodeMarkup(getPos(), undefined, { ...node.attrs, boxHeight: currentHeight }); return true }).run()
+        const docUp = () => {
+          document.removeEventListener('mousemove', docMove)
+          document.removeEventListener('mouseup', docUp)
+          if (typeof getPos === 'function') {
+            const pos = getPos()
+            editor
+              .chain()
+              .focus()
+              .setNodeSelection(pos)
+              .updateAttributes('resizableCodeBlock', {
+                height: textarea.offsetHeight,
+                code: textarea.value,
+              })
+              .run()
+          }
         }
-        document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
+        document.addEventListener('mousemove', docMove)
+        document.addEventListener('mouseup', docUp)
+      })
+
+      // --- 同步内容到节点 ---
+      textarea.addEventListener('blur', () => {
+        if (typeof getPos === 'function') {
+          const pos = getPos()
+          editor
+            .chain()
+            .focus()
+            .setNodeSelection(pos)
+            .updateAttributes('resizableCodeBlock', { code: textarea.value })
+            .run()
+        }
       })
 
       return {
         dom: wrapper,
-        contentDOM: pre,
-        update(updatedNode) {
-          if (updatedNode.type !== node.type) return false
-          node = updatedNode
-          langLabel.textContent = node.attrs.language || '代码'
-          if (node.attrs.boxHeight) { box.style.height = node.attrs.boxHeight + 'px'; gutter.style.height = node.attrs.boxHeight + 'px' }
-          renderContent()
+        update(p) {
+          if (p.attrs.code !== textarea.value) textarea.value = p.attrs.code || ''
+          textarea.style.height = (p.attrs.height || 200) + 'px'
+          langLabel.textContent = p.attrs.language || 'text'
+          lnLabel.textContent = p.attrs.showLineNumbers ? '行号: 开' : '行号: 关'
           return true
         },
-        ignoreMutation(mutation) { return mutation.type === 'attributes' && (mutation.target === box || mutation.target === gutter || mutation.target === langBar) }
+        ignoreMutation(p) { return true },
+        stopEvent() { return true },
       }
     }
-  }
+  },
 })
