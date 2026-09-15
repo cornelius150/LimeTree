@@ -94,6 +94,55 @@
       <button class="tb-btn" @click="editor.chain().focus().unsetAllMarks().clearNodes().run()" title="清除格式">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="4" y="16" font-size="12" font-weight="bold">A</text><line x1="3" y1="20" x2="21" y2="4" stroke="#e74c3c"/></svg>
       </button>
+      <span class="tb-sep"></span>
+      <!-- 组8: 字体与字号 -->
+      <select class="tb-select" @change="onFontFamilyChange($event)" title="字体">
+        <option value="">默认字体</option>
+        <option v-for="f in fontFamilies" :key="f" :value="f" :style="{ fontFamily: f }">{{ f }}</option>
+      </select>
+      <select class="tb-select" @change="onFontSizeChange($event)" title="字号">
+        <option value="">字号</option>
+        <option value="10">10pt</option>
+        <option value="11">11pt</option>
+        <option value="12">12pt</option>
+        <option value="14">14pt</option>
+        <option value="16">16pt</option>
+        <option value="18">18pt</option>
+        <option value="20">20pt</option>
+        <option value="24">24pt</option>
+        <option value="28">28pt</option>
+        <option value="32">32pt</option>
+      </select>
+      <span class="tb-sep"></span>
+      <!-- 组9: 颜色面板 -->
+      <div class="tb-color-wrap">
+        <button class="tb-btn" @click="showColorPicker = !showColorPicker" title="字体颜色">
+          <svg width="18" height="18" viewBox="0 0 24 24"><text x="5" y="16" font-size="14" font-weight="bold" :fill="currentColor">A</text><path d="M3 18h18v2H3z" fill="#e91e63"/></svg>
+        </button>
+        <div v-if="showColorPicker" class="tb-color-dd" @click.stop>
+          <div class="tb-color-grid">
+            <span v-for="c in colorPalette" :key="c" class="tb-color-sw" :style="{ background: c }" @click="applyTextColor(c)"></span>
+          </div>
+        </div>
+      </div>
+      <div class="tb-color-wrap">
+        <button class="tb-btn" @click="showBgPicker = !showBgPicker" title="背景色">
+          <svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" :fill="currentBgColor"/><text x="5" y="16" font-size="14" font-weight="bold" fill="#333">A</text></svg>
+        </button>
+        <div v-if="showBgPicker" class="tb-color-dd" @click.stop>
+          <div class="tb-color-grid">
+            <span v-for="c in bgPalette" :key="c" class="tb-color-sw" :style="{ background: c }" @click="applyBgColor(c)"></span>
+          </div>
+        </div>
+      </div>
+      <span class="tb-sep"></span>
+      <!-- 组10: 段落缩进 -->
+      <button class="tb-btn" @click="editor.chain().focus().sinkListItem('listItem').run()" title="增加段落缩进">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18 M3 12h18 M3 18h18"/><path d="M8 9l3 3-3 3"/></svg>
+      </button>
+      <button class="tb-btn" @click="editor.chain().focus().liftListItem('listItem').run()" title="减少段落缩进">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18 M3 12h18 M3 18h18"/><path d="M11 9l-3 3 3 3"/></svg>
+      </button>
     </div>
 
     <!-- ============ 查找条 ============ -->
@@ -209,7 +258,7 @@ import TextStyle from '@tiptap/extension-text-style'
 import Link from '@tiptap/extension-link'
 import { Markdown } from 'tiptap-markdown'
 
-/* TextStyle 扩展加 fontSize 属性（CherryTree 小/中/大/特大号字） */
+/* TextStyle 扩展加 fontSize + fontFamily 属性 */
 const TextStyleWithFontSize = TextStyle.extend({
   addAttributes() {
     return {
@@ -218,6 +267,16 @@ const TextStyleWithFontSize = TextStyle.extend({
         default: null,
         renderHTML: attrs => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
         parseHTML: el => el.style.fontSize || null
+      },
+      fontFamily: {
+        default: null,
+        renderHTML: attrs => {
+          const styles = []
+          if (attrs.fontSize) styles.push(`font-size: ${attrs.fontSize}`)
+          if (attrs.fontFamily) styles.push(`font-family: ${attrs.fontFamily}`)
+          return styles.length ? { style: styles.join('; ') } : {}
+        },
+        parseHTML: el => el.style.fontFamily || null
       }
     }
   }
@@ -242,7 +301,17 @@ const fmtDlg = ref(false); const fmtColW = ref(120)
 const findBar = ref(false); const findText = ref(''); const replaceText = ref('')
 const findInput = ref(null)
 const colorPalette = ['#000000', '#ffffff', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff',
-  '#808080', '#c0c0c0', '#ffcccc', '#ffe599', '#fff2cc', '#d9ead3', '#cfe2f3', '#d9d2e9']
+  '#808080', '#c0c0c0', '#ffcccc', '#ffe599', '#fff2cc', '#d9ead3', '#cfe2f3', '#d9d2e9',
+  '#333333', '#666666', '#999999', '#cc0000', '#e69100', '#bf9000', '#38761d', '#134f5c',
+  '#0b5394', '#741b47', '#3d85c6', '#6aa84f', '#e06666', '#f6b26b', '#ffd966', '#93c47d']
+const bgPalette = ['transparent', '#ffff00', '#ff9900', '#ffcccc', '#ffe599', '#fff2cc', '#d9ead3', '#cfe2f3',
+  '#d9d2e9', '#ffd9b3', '#f4cccc', '#fce5cd', '#d9ead3', '#c9daf8', '#d9d2e9', '#ead1dc',
+  '#fffacd', '#e6ffe6', '#e6f3ff', '#ffe6e6', '#f0e6ff', '#ffffe0', '#f5f5dc', '#ffffff']
+const fontFamilies = ['Microsoft YaHei', 'SimSun', 'KaiTi', 'SimHei', 'FangSong', 'Microsoft YaHei UI',
+  'Consolas', 'Courier New', 'Times New Roman', 'Arial', 'Calibri', 'Cambria', 'Georgia',
+  'Verdana', 'Tahoma', 'Trebuchet MS', 'Comic Sans MS', 'Segoe UI', 'Source Code Pro']
+const showColorPicker = ref(false); const showBgPicker = ref(false)
+const currentColor = ref('#333333'); const currentBgColor = ref('#fffacd')
 
 const editor = useEditor({
   content: props.node.content || '',
@@ -327,14 +396,20 @@ function insertTimestamp() {
   hideCtx()
 }
 
-/* ---------- 字号（小/中/大/特大） ---------- */
+/* ---------- 字号 ---------- */
 function setFontSize(px) { editor.value.chain().focus().setMark('textStyle', { fontSize: px + 'px' }).run() }
+function onFontSizeChange(e) { const v = e.target.value; if (v) { setFontSize(v); e.target.value = '' } }
 
-/* ---------- 文本颜色 / 背景色（简易循环色板） ---------- */
+/* ---------- 字体 ---------- */
+function onFontFamilyChange(e) { const v = e.target.value; if (v) { editor.value.chain().focus().setMark('textStyle', { fontFamily: v }).run(); e.target.value = '' } }
+
+/* ---------- 文本颜色 / 背景色 ---------- */
 let colorIdx = 0
 function pickTextColor() { editor.value.chain().focus().setColor(colorPalette[(colorIdx++ * 7) % 16]).run() }
-function pickBgColor() { editor.value.chain().focus().toggleHighlight({ color: colorPalette[(colorIdx++ * 5 + 8) % 16] }).run() }
+function pickBgColor() { editor.value.chain().focus().toggleHighlight({ color: bgPalette[(colorIdx++ * 5 + 1) % 24] }).run() }
 function toggleHighlight() { editor.value.chain().focus().toggleHighlight({ color: '#fffacd' }).run() }
+function applyTextColor(c) { currentColor.value = c; editor.value.chain().focus().setColor(c).run(); showColorPicker.value = false }
+function applyBgColor(c) { currentBgColor.value = c; if (c === 'transparent') editor.value.chain().focus().unsetHighlight().run(); else editor.value.chain().focus().toggleHighlight({ color: c }).run(); showBgPicker.value = false }
 
 /* ---------- 待办事项列表（CherryTree ☐/☑ 风格） ---------- */
 const isTodoList = computed(() => {
@@ -501,7 +576,7 @@ onMounted(() => {
     editor.value.chain().focus().setImage({ src: dataUrl, alt: 'pasted-image', title: 'pasted-image', width: null, height: null }).run()
   }
   window.addEventListener('editor-menu', onEditorMenu)
-  window.addEventListener('click', hideCtx)
+  window.addEventListener('click', () => { hideCtx(); showColorPicker.value = false; showBgPicker.value = false })
   /* 点击 ☐/☑ 切换待办状态 */
   document.addEventListener('mousedown', onTodoClick)
 })
