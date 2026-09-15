@@ -618,6 +618,8 @@ function handleMenu(ch) {
     'menu:about': () => { alert('LimeTree v2.1.0\n树形笔记本软件\n\n与 CherryTree 一致的九大菜单\n图片/表格/代码框可拖拽缩放\nMarkdown 格式存储 (.md)\n节点时间戳\n\nGitHub: https://github.com/cornelius150/LimeTree') },
     'menu:preferences': () => { settingsDlg.value = true },
     'menu:settings': () => { settingsDlg.value = true },
+    'menu:open-folder': () => window.api.importTxtFolder(),
+    'menu:save-clean': async () => { await window.api.saveDoc(); saveStatus.value = '已保存' },
     'menu:tree-info': () => { const cnt = allNodes.value.length; alert(`树信息\n\n节点总数: ${cnt}\n根节点数: ${allNodes.value.filter(n => !n.parent_id).length}\n书签数: ${bookmarks.value.length}\n\n文档格式: Markdown (.md)`) },
     'menu:copy-path': () => { window.api.clipboardWriteText(docPath || ''); alert('文档路径已复制到剪贴板') },
     'menu:page-setup': () => { alert('页面设置\n\n纸张: A4\n边距: 默认\n方向: 纵向\n\n（打印设置将在打印时自动应用）') },
