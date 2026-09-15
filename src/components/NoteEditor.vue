@@ -30,7 +30,7 @@
       </button>
       <span class="tb-sep"></span>
       <!-- 组4: 搜索 -->
-      <button class="tb-btn" @click="openFind" title="查找 (Ctrl+F)">
+      <button class="tb-btn" @click="$emit('app-menu', 'menu:find-all')" title="搜索 (Ctrl+Shift+F)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/><circle cx="11" cy="11" r="2" fill="#e74c3c"/></svg>
       </button>
       <span class="tb-sep"></span>
@@ -145,11 +145,11 @@
     </div>
 
     <!-- ============ CherryTree 式编辑区右键菜单 ============ -->
-    <div v-if="ctxMenuVisible" class="ctx-menu" :style="{ left: ctxX+'px', top: ctxY+'px' }" @click.stop>
-      <div class="ctx-item" @click="doCut"><span class="ctx-icon">✂️</span>剪切<span class="ctx-key">Ctrl+X</span></div>
-      <div class="ctx-item" @click="doCopy"><span class="ctx-icon">📋</span>复制<span class="ctx-key">Ctrl+C</span></div>
-      <div class="ctx-item" @click="doPaste"><span class="ctx-icon">📄</span>粘贴<span class="ctx-key">Ctrl+V</span></div>
-      <div class="ctx-item" @click="pastePlain"><span class="ctx-icon">🧾</span>粘贴为纯文本<span class="ctx-key">Ctrl+Alt+P</span></div>
+    <div v-if="ctxMenuVisible" class="ctx-menu" :style="{ left: ctxX+'px', top: ctxY+'px' }" @click.stop @contextmenu.prevent>
+      <div class="ctx-item" @click.stop="doCut"><span class="ctx-icon">✂️</span>剪切<span class="ctx-key">Ctrl+X</span></div>
+      <div class="ctx-item" @click.stop="doCopy"><span class="ctx-icon">📋</span>复制<span class="ctx-key">Ctrl+C</span></div>
+      <div class="ctx-item" @click.stop="doPaste"><span class="ctx-icon">📄</span>粘贴<span class="ctx-key">Ctrl+V</span></div>
+      <div class="ctx-item" @click.stop="pastePlain"><span class="ctx-icon">🧾</span>粘贴为纯文本<span class="ctx-key">Ctrl+Alt+P</span></div>
       <div class="ctx-sep"></div>
       <div class="ctx-item" @click="insertTimestamp"><span class="ctx-icon">⏰</span>插入时间戳<span class="ctx-key">Ctrl+;</span></div>
       <div class="ctx-sep"></div>
@@ -340,13 +340,35 @@ function exportPdf() { emit('app-menu', 'menu:exp-pdf') }
 
 /* ---------- 剪贴板 ---------- */
 function getSelText() { if (!editor.value) return ''; const { from, to, empty } = editor.value.state.selection; return empty ? '' : editor.value.state.doc.textBetween(from, to, ' ') }
-function doCut() { try { const t = getSelText(); if (t) { window.api.clipboardWriteText(t); editor.value.chain().focus().deleteSelection().run() } } catch(e) { console.error(e) }; hideCtx() }
-function doCopy() { try { const t = getSelText(); if (t) window.api.clipboardWriteText(t) } catch(e) { console.error(e) }; hideCtx() }
+function doCut() {
+  try {
+    if (!editor.value) return
+    const { from, to, empty } = editor.value.state.selection
+    if (!empty) {
+      const text = editor.value.state.doc.textBetween(from, to, ' ')
+      window.api.clipboardWriteText(text)
+      editor.value.chain().focus().deleteSelection().run()
+    }
+  } catch(e) { console.error('doCut error:', e) }
+  hideCtx()
+}
+function doCopy() {
+  try {
+    if (!editor.value) return
+    const { from, to, empty } = editor.value.state.selection
+    if (!empty) {
+      const text = editor.value.state.doc.textBetween(from, to, ' ')
+      window.api.clipboardWriteText(text)
+    }
+  } catch(e) { console.error('doCopy error:', e) }
+  hideCtx()
+}
 async function doPaste() {
   try {
+    if (!editor.value) return
     const t = await window.api.clipboardReadText()
     if (t) editor.value.chain().focus().insertContent(t).run()
-  } catch(e) { console.error('paste error:', e) }
+  } catch(e) { console.error('doPaste error:', e) }
   hideCtx()
 }
 async function pastePlain() {
