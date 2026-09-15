@@ -103,7 +103,14 @@ async function initDB() {
     : path.join(app.getPath('userData'), 'limetree.md')
 
   if (fs.existsSync(docPath)) {
-    parseAndLoadMD(fs.readFileSync(docPath, 'utf-8'))
+    try {
+      parseAndLoadMD(fs.readFileSync(docPath, 'utf-8'))
+    } catch (err) {
+      console.error('Failed to parse existing doc, starting fresh:', err.message)
+      // Corrupt data - rename old file as backup and start fresh
+      try { fs.renameSync(docPath, docPath + '.bak.' + Date.now()) } catch {}
+      db.run('DELETE FROM nodes'); db.run('DELETE FROM bookmarks')
+    }
   }
   const cnt = dbGet('SELECT COUNT(*) as c FROM nodes')
   if (!cnt || cnt.c === 0) {
