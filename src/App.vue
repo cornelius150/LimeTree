@@ -169,6 +169,40 @@
         </div>
       </div>
     </div>
+
+    <!-- ================= 全局搜索对话框 ================= -->
+    <div v-if="searchDlg" class="modal-overlay" @click.self="searchDlg = false">
+      <div class="modal-dialog" style="min-width:520px;max-width:90vw">
+        <div class="modal-title">在所有节点中搜索</div>
+        <div class="modal-body">
+          <div class="modal-field" style="margin-bottom:12px">
+            <label style="width:auto;margin-right:8px">查找</label>
+            <input type="text" v-model="searchAllKw" placeholder="输入搜索关键词..." style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:14px;background:var(--bg-main);color:var(--text-primary);outline:none" @keyup.enter="execSearchAll" ref="searchAllInput" />
+          </div>
+          <div style="display:flex;gap:20px;margin-bottom:12px;font-size:13px">
+            <label><input type="checkbox" v-model="searchMatchCase" /> 匹配大小写</label>
+            <label><input type="checkbox" v-model="searchWholeWord" /> 完整单词</label>
+            <label><input type="checkbox" v-model="searchRegex" /> 正则表达式</label>
+          </div>
+          <div style="display:flex;gap:20px;margin-bottom:12px;font-size:13px">
+            <label><input type="checkbox" v-model="searchInContent" checked /> 节点内容</label>
+            <label><input type="checkbox" v-model="searchInName" checked /> 节点名称</label>
+          </div>
+          <div v-if="searchAllResults.length > 0" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:4px">
+            <div style="padding:4px 10px;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border)">找到 {{ searchAllResults.length }} 个结果</div>
+            <div v-for="r in searchAllResults" :key="r.id" class="search-result-item" style="padding:6px 10px;cursor:pointer" @click="onSearchResultClick(r)">
+              <span style="margin-right:6px">{{ r.icon || '📄' }}</span>
+              <strong>{{ r.name }}</strong>
+              <div v-if="r.snippet" style="font-size:12px;color:var(--text-muted);margin-left:22px;margin-top:2px">{{ r.snippet }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel" @click="searchDlg = false">取消</button>
+          <button class="modal-btn modal-btn-ok" @click="execSearchAll">搜索</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -202,6 +236,12 @@ const bookmarks = ref([]); const bmDlg = ref(false); const bmEditList = ref([])
 const infoDlg = ref(false); const nodeInfo = ref(null)
 const idDlg = ref(false); const newId = ref(0)
 const iconDlg = ref(false); const colorDlg = ref(false)
+
+/* 全局搜索对话框 */
+const searchDlg = ref(false); const searchAllKw = ref(''); const searchAllInput = ref(null)
+const searchMatchCase = ref(false); const searchWholeWord = ref(false); const searchRegex = ref(false)
+const searchInContent = ref(true); const searchInName = ref(true)
+const searchAllResults = ref([])
 
 const iconList = ['📄','📔','📋','📌','📍','🔖','🏷','🌟','⭐','💡','🔑','🔒','🔓','🛡','⚙','🔧','🔨','🛠','💻','🖥','⌨','🖱','💾','💿','📁','📂','🗂','🗃','📦','📦','📤','📥','📨','📩','📧','📥','📝','✏','🖋','🖊','🖌','🖍','🎯','🏷','🎓','📚','📖','📰','🗞','📓','📔','📒','📕','📗','📘','📙','🔗','⛓','✅','☑','☐','❌','⛔','🔔','🔕','🎵','🎶','🎨','🎬','📷','🖼','🧩','🎲','🎮','🕹','🎰','🏆','🥇','🥈','🥉','🎁','🎂','🎉','🎊','🚀','🌍','🌎','🌏','🌐','🔬','🔭','🧪','🧫','🧬','💊','💉','🌡','🩺','🌱','🌿','☘','🍀','🍃','🌾','🌷','🌹','🌻','🌼','🌸','🌺','🍄','🌰','🎃','🐚','🪨','☀','🌙','⭐','🌟','✨','⚡','🔥','💧','🌊','❄','🌈','🍃','🌿']
 const hlColors = ['','transparent','#ffd0d0','#ffe599','#fff2cc','#d9ead3','#cfe2f3','#d9d2e9','#ffd9b3','#d0e0ff','#e6ccff','#cccccc','#ff9999','#ffcc66','#ffff66','#99cc66','#66cccc','#6666cc','#cc66cc','#ff6666','#ffaa33','#ffff00','#66cc33','#33cccc','#3366cc','#cc33cc','#808080','#cc0000','#e69100','#bf9000','#38761d','#134f5c','#0b5394','#741b47','#666666','#dd0000','#b45f06','#783f04','#274e13','#0c343d','#073763','#4c1130','#333333']
@@ -245,6 +285,18 @@ function addSibling() { const n = allNodes.value.find(x => x.id === selectedId.v
 function onSearch() { clearTimeout(searchTimer); searchTimer = setTimeout(async () => { searchResults.value = searchKw.value.trim() ? await window.api.searchNodes(searchKw.value) : [] }, 300) }
 function clearSearch() { searchKw.value = ''; searchResults.value = [] }
 function focusSearch() { if (searchInput.value) searchInput.value.focus() }
+
+/* 全局搜索对话框 */
+async function execSearchAll() {
+  const kw = searchAllKw.value.trim()
+  if (!kw) { searchAllResults.value = []; return }
+  searchAllResults.value = await window.api.searchNodes(kw)
+}
+async function onSearchResultClick(r) {
+  searchDlg.value = false
+  const n = allNodes.value.find(x => x.id === r.id)
+  if (n) { let p = n.parent_id; while (p) { if (!expandedSet.value.has(p)) onToggle(p); const pn = allNodes.value.find(x => x.id === p); p = pn ? pn.parent_id : null }; await onSelect(n) }
+}
 async function onSearchClick(r) {
   clearSearch()
   const n = allNodes.value.find(x => x.id === r.id)
@@ -341,8 +393,9 @@ function handleMenu(ch) {
     'menu:bm-add': () => { if (selectedId.value) window.api.bmAdd(selectedId.value).then(() => bookmarks.value = window.api.bmList()) },
     'menu:bm-remove': () => { if (selectedId.value) window.api.bmRemove(selectedId.value).then(() => bookmarks.value = window.api.bmList()) },
     'menu:bm-handle': () => openBmHandle(),
-    'menu:find-all': () => focusSearch(),
+    'menu:find-all': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
     'menu:iter-find': () => focusSearch(),
+    'menu:find': () => { searchDlg.value = true; nextTick(() => searchAllInput.value?.focus()) },
     'menu:exp-pdf': () => { if (selectedNode.value) window.api.exportPdf({ node: selectedNode.value }) },
     'menu:exp-txt': () => { if (selectedNode.value) window.api.exportTxt({ node: selectedNode.value }) },
     'menu:exp-html': () => { if (selectedNode.value) window.api.exportHtml({ node: selectedNode.value }) },
