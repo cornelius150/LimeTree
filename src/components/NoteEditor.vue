@@ -300,7 +300,7 @@ const currentColor = ref('#333333'); const currentBgColor = ref('#fffacd')
 const editor = useEditor({
   content: props.node.content || '',
   extensions: [
-    StarterKit.configure({ codeBlock: false, link: false }),
+    StarterKit.configure({ codeBlock: false }),
     Underline, Color, TextStyleWithFontSize,
     Highlight,
     Link.configure({ openOnClick: false }),
@@ -340,11 +340,13 @@ function exportPdf() { emit('app-menu', 'menu:exp-pdf') }
 
 /* ---------- 剪贴板 ---------- */
 function getSelText() { if (!editor.value) return ''; const { from, to, empty } = editor.value.state.selection; return empty ? '' : editor.value.state.doc.textBetween(from, to, ' ') }
-function doCut() { const t = getSelText(); if (t) { window.api.clipboardWriteText(t); editor.value.chain().focus().deleteSelection().run() }; hideCtx() }
-function doCopy() { const t = getSelText(); if (t) window.api.clipboardWriteText(t); hideCtx() }
+function doCut() { try { const t = getSelText(); if (t) { window.api.clipboardWriteText(t); editor.value.chain().focus().deleteSelection().run() } } catch(e) { console.error(e) }; hideCtx() }
+function doCopy() { try { const t = getSelText(); if (t) window.api.clipboardWriteText(t) } catch(e) { console.error(e) }; hideCtx() }
 async function doPaste() {
-  const t = await window.api.clipboardReadText()
-  if (t) editor.value.chain().focus().insertContent(t).run()
+  try {
+    const t = await window.api.clipboardReadText()
+    if (t) editor.value.chain().focus().insertContent(t).run()
+  } catch(e) { console.error('paste error:', e) }
   hideCtx()
 }
 async function pastePlain() {
@@ -355,45 +357,65 @@ async function pastePlain() {
 
 /* ---------- 插入功能 ---------- */
 async function insertImage() {
-  const r = await window.api.selectImage()
-  if (!r) return
-  editor.value.chain().focus().setImage({ src: r.dataUrl, alt: r.name, title: r.name, width: null, height: null }).run()
+  try {
+    const r = await window.api.selectImage()
+    if (!r) return
+    editor.value.chain().focus().setImage({ src: r.dataUrl, alt: r.name, title: r.name, width: null, height: null }).run()
+  } catch(e) { console.error('insertImage error:', e) }
   hideCtx()
 }
 function insertTable() { tRows.value = 3; tCols.value = 3; tHeader.value = true; tableDlg.value = true; hideCtx() }
 function confirmTable() {
   tableDlg.value = false
-  editor.value.chain().focus().insertTable({ rows: Math.max(1, Math.min(50, tRows.value || 3)), cols: Math.max(1, Math.min(20, tCols.value || 3)), withHeaderRow: tHeader.value }).run()
+  try {
+    editor.value.chain().focus().insertTable({ rows: Math.max(1, Math.min(50, tRows.value || 3)), cols: Math.max(1, Math.min(20, tCols.value || 3)), withHeaderRow: tHeader.value }).run()
+  } catch(e) { console.error('confirmTable error:', e) }
 }
 function insertCodeBlock() { codeDlg.value = true; hideCtx() }
 function confirmCode() {
   codeDlg.value = false
-  editor.value.chain().focus().toggleCodeBlock().run()
-  editor.value.chain().focus().setNodeSelection(editor.value.state.selection.from)
+  try {
+    editor.value.chain().focus().toggleCodeBlock().run()
+    // 设置代码框属性
+    setTimeout(() => {
+      try {
+        const pos = editor.value.state.selection.$from
+        for (let d = pos.depth; d >= 1; d--) {
+          if (pos.node(d).type.name === 'codeBlock') {
+            editor.value.chain().focus().command(({ tr }) => {
+              tr.setNodeMarkup(pos.before(d), undefined, { language: codeLang.value || '', boxHeight: codeHeight.value || 200, showLn: codeLn.value })
+              return true
+            }).run()
+            break
+          }
+        }
+      } catch(e) { console.error('setCodeAttrs error:', e) }
+    }, 50)
+  } catch(e) { console.error('confirmCode error:', e) }
   hideCtx()
 }
 function insertTimestamp() {
-  const n = new Date()
-  const p = (x) => String(x).padStart(2, '0')
-  const ts = `${n.getFullYear()}/${p(n.getMonth() + 1)}/${p(n.getDate())} ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`
-  editor.value.chain().focus().insertContent(ts).run()
+  try {
+    const n = new Date()
+    const p = (x) => String(x).padStart(2, '0')
+    const ts = `${n.getFullYear()}/${p(n.getMonth() + 1)}/${p(n.getDate())} ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`
+    editor.value.chain().focus().insertContent(ts).run()
+  } catch(e) { console.error('timestamp error:', e) }
   hideCtx()
 }
 
 /* ---------- 字号 ---------- */
-function setFontSize(px) { editor.value.chain().focus().setMark('textStyle', { fontSize: px + 'px' }).run() }
+function setFontSize(px) { try { editor.value.chain().focus().setMark('textStyle', { fontSize: px + 'px' }).run() } catch(e) { console.error('setFontSize error:', e) } }
 function onFontSizeChange(e) { const v = e.target.value; if (v) { setFontSize(v); e.target.value = '' } }
-
-/* ---------- 字体 ---------- */
-function onFontFamilyChange(e) { const v = e.target.value; if (v) { editor.value.chain().focus().setMark('textStyle', { fontFamily: v }).run(); e.target.value = '' } }
+function onFontFamilyChange(e) { const v = e.target.value; if (v) { try { editor.value.chain().focus().setMark('textStyle', { fontFamily: v }).run() } catch(err) { console.error(err) }; e.target.value = '' } }
 
 /* ---------- 文本颜色 / 背景色 ---------- */
 let colorIdx = 0
-function pickTextColor() { editor.value.chain().focus().setColor(colorPalette[(colorIdx++ * 7) % 16]).run() }
-function pickBgColor() { editor.value.chain().focus().toggleHighlight({ color: bgPalette[(colorIdx++ * 5 + 1) % 24] }).run() }
-function toggleHighlight() { editor.value.chain().focus().toggleHighlight({ color: '#fffacd' }).run() }
-function applyTextColor(c) { currentColor.value = c; editor.value.chain().focus().setColor(c).run(); showColorPicker.value = false }
-function applyBgColor(c) { currentBgColor.value = c; if (c === 'transparent') editor.value.chain().focus().unsetHighlight().run(); else editor.value.chain().focus().toggleHighlight({ color: c }).run(); showBgPicker.value = false }
+function pickTextColor() { try { editor.value.chain().focus().setColor(colorPalette[(colorIdx++ * 7) % 16]).run() } catch(e) { console.error(e) } }
+function pickBgColor() { try { editor.value.chain().focus().toggleHighlight({ color: bgPalette[(colorIdx++ * 5 + 1) % 24] }).run() } catch(e) { console.error(e) } }
+function toggleHighlight() { try { editor.value.chain().focus().toggleHighlight({ color: '#fffacd' }).run() } catch(e) { console.error(e) } }
+function applyTextColor(c) { try { currentColor.value = c; editor.value.chain().focus().setColor(c).run() } catch(e) { console.error(e) }; showColorPicker.value = false }
+function applyBgColor(c) { try { if (c === 'transparent') editor.value.chain().focus().unsetHighlight().run(); else editor.value.chain().focus().toggleHighlight({ color: c }).run() } catch(e) { console.error(e) }; currentBgColor.value = c; showBgPicker.value = false }
 
 /* ---------- 待办事项列表（CherryTree ☐/☑ 风格） ---------- */
 const isTodoList = computed(() => {
@@ -402,13 +424,15 @@ const isTodoList = computed(() => {
   return $from.parent.textContent.startsWith('☐') || $from.parent.textContent.startsWith('☑')
 })
 function toggleTodoList() {
-  if (!editor.value.isActive('bulletList')) editor.value.chain().focus().toggleBulletList().run()
-  const { $from } = editor.value.state.selection
-  const text = $from.parent.textContent || ''
-  const start = $from.start()
-  if (text.startsWith('☐')) { editor.value.chain().focus().deleteRange({ from: start, to: start + 1 }).insertContentAt(start, '☑').run() }
-  else if (text.startsWith('☑')) { editor.value.chain().focus().deleteRange({ from: start, to: start + 1 }).insertContentAt(start, '☐').run() }
-  else { editor.value.chain().focus().insertContentAt(start, '☐ ').run() }
+  try {
+    if (!editor.value.isActive('bulletList')) editor.value.chain().focus().toggleBulletList().run()
+    const { $from } = editor.value.state.selection
+    const text = $from.parent.textContent || ''
+    const start = $from.start()
+    if (text.startsWith('☐')) { editor.value.chain().focus().deleteRange({ from: start, to: start + 1 }).insertContentAt(start, '☑').run() }
+    else if (text.startsWith('☑')) { editor.value.chain().focus().deleteRange({ from: start, to: start + 1 }).insertContentAt(start, '☐').run() }
+    else { editor.value.chain().focus().insertContentAt(start, '☐ ').run() }
+  } catch(e) { console.error('toggleTodoList error:', e) }
   hideCtx()
 }
 function toggleTodoState() { toggleTodoList() }
@@ -461,24 +485,42 @@ function offsetOf(doc, index) { let off = 0; for (let i = 0; i < index; i++) off
 
 /* ---------- 链接 ---------- */
 function toggleLink() {
-  const url = prompt('请输入链接地址：', 'https://')
-  if (!url) return
-  editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  try {
+    const url = prompt('请输入链接地址：', 'https://')
+    if (!url) return
+    editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  } catch(e) { console.error('toggleLink error:', e) }
   hideCtx()
 }
-function stripLink() { editor.value.chain().focus().extendMarkRange('link').unsetLink().run(); hideCtx() }
+function stripLink() { try { editor.value.chain().focus().extendMarkRange('link').unsetLink().run() } catch(e) { console.error(e) }; hideCtx() }
 
 /* ---------- 锚点 ---------- */
 function insertAnchor() {
-  const name = prompt('请输入锚点名称：', 'anchor')
-  if (!name) return
-  editor.value.chain().focus().insertContent(`<a name="${name}">⚓ ${name}</a>`).run()
+  try {
+    const name = prompt('请输入锚点名称：', 'anchor')
+    if (!name) return
+    editor.value.chain().focus().insertContent(`⚓ ${name}`).run()
+  } catch(e) { console.error('insertAnchor error:', e) }
   hideCtx()
 }
 
 /* ---------- 上标/下标 ---------- */
-function toggleSuperscript() { editor.value.chain().focus().toggleMark('superscript').run() }
-function toggleSubscript() { editor.value.chain().focus().toggleMark('subscript').run() }
+function toggleSuperscript() {
+  try {
+    const sel = editor.value.state.selection
+    if (sel.empty) return
+    const text = editor.value.state.doc.textBetween(sel.from, sel.to, '')
+    editor.value.chain().focus().deleteSelection().insertContent(`<sup>${text}</sup>`).run()
+  } catch(e) { console.error('superscript error:', e) }
+}
+function toggleSubscript() {
+  try {
+    const sel = editor.value.state.selection
+    if (sel.empty) return
+    const text = editor.value.state.doc.textBetween(sel.from, sel.to, '')
+    editor.value.chain().focus().deleteSelection().insertContent(`<sub>${text}</sub>`).run()
+  } catch(e) { console.error('subscript error:', e) }
+}
 
 /* ---------- 查找/替换（window.find） ---------- */
 function openFind() { findBar.value = true; setTimeout(() => findInput.value?.focus(), 50); hideCtx() }
@@ -524,6 +566,7 @@ function hideCtx() { ctxMenuVisible.value = false }
 function onEditorMenu(e) {
   if (!editor.value) return
   const a = e.detail.action
+  try {
   const ch = editor.value.chain().focus()
   switch (a) {
     case 'menu:undo': ch.undo().run(); break
@@ -563,7 +606,15 @@ function onEditorMenu(e) {
     case 'menu:insert-table': insertTable(); break
     case 'menu:insert-code': insertCodeBlock(); break
     case 'menu:insert-hr': ch.setHorizontalRule().run(); break
+    case 'menu:insert-link': toggleLink(); break
+    case 'menu:insert-anchor': insertAnchor(); break
+    case 'menu:replace': openFind(); break
+    case 'menu:find-all': openFind(); break
+    case 'menu:paste-plain': pastePlain(); break
+    case 'menu:paste-rich': doPaste(); break
+    default: console.log('Unhandled editor menu:', a)
   }
+  } catch(e) { console.error('onEditorMenu error for', a, ':', e) }
 }
 
 onMounted(() => {
