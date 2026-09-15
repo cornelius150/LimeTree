@@ -170,36 +170,113 @@
       </div>
     </div>
 
-    <!-- ================= 全局搜索对话框 ================= -->
+    <!-- ================= 搜索对话框（按 CherryTree 截图布局） ================= -->
     <div v-if="searchDlg" class="modal-overlay" @click.self="searchDlg = false">
-      <div class="modal-dialog" style="min-width:520px;max-width:90vw">
-        <div class="modal-title">在所有节点中搜索</div>
-        <div class="modal-body">
-          <div class="modal-field" style="margin-bottom:12px">
-            <label style="width:auto;margin-right:8px">查找</label>
-            <input type="text" v-model="searchAllKw" placeholder="输入搜索关键词..." style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:14px;background:var(--bg-main);color:var(--text-primary);outline:none" @keyup.enter="execSearchAll" ref="searchAllInput" />
+      <div class="modal-dialog search-dialog">
+        <div class="search-dlg-header">
+          <img src="./assets/lime-icon-small.png" alt="LimeTree" class="settings-logo" />
+          <span class="settings-title-text">在多个节点中搜索</span>
+          <button class="settings-close-btn" @click="searchDlg = false">✕</button>
+        </div>
+        <div class="search-dlg-body">
+          <!-- 查找输入框 -->
+          <div class="search-dlg-section">
+            <label class="search-dlg-label">查找</label>
+            <div class="search-dlg-input-row">
+              <input type="text" v-model="searchAllKw" placeholder="" class="search-dlg-input" ref="searchAllInput" @keyup.enter="execSearchAll" />
+              <button class="search-dlg-clear" @click="searchAllKw = ''" title="清空">🧹</button>
+              <button class="search-dlg-history" title="历史搜索">▼</button>
+            </div>
           </div>
-          <div style="display:flex;gap:20px;margin-bottom:12px;font-size:13px">
-            <label><input type="checkbox" v-model="searchMatchCase" /> 匹配大小写</label>
-            <label><input type="checkbox" v-model="searchWholeWord" /> 完整单词</label>
-            <label><input type="checkbox" v-model="searchRegex" /> 正则表达式</label>
+          <!-- 搜索选项 -->
+          <div class="search-dlg-section">
+            <div class="search-dlg-section-title">搜索选项</div>
+            <div class="search-dlg-cols">
+              <div class="search-dlg-col">
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchMatchCase" /> 匹配大小写</label>
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchWholeWord" /> 完整单词</label>
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchNoAccent" /> 不区分重音</label>
+              </div>
+              <div class="search-dlg-col">
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchRegex" /> 正则表达式</label>
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchWordStart" /> 单词开始部分</label>
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchOverrideExclude" /> 覆盖排除项</label>
+              </div>
+            </div>
+            <!-- 多词匹配 -->
+            <div class="search-dlg-radio-group">
+              <div class="search-dlg-radio-col">
+                <label class="search-dlg-radio"><input type="radio" v-model="searchMultiWord" value="exact" /> 更多词语，精确匹配</label>
+              </div>
+              <div class="search-dlg-radio-col">
+                <label class="search-dlg-radio"><input type="radio" v-model="searchMultiWord" value="ignore-order" /> 更多词语，忽略顺序</label>
+                <label class="search-dlg-radio"><input type="radio" v-model="searchMultiWord" value="any" /> 更多词语，匹配任意</label>
+              </div>
+            </div>
+            <!-- 搜索方向 -->
+            <div class="search-dlg-radio-group">
+              <div class="search-dlg-radio-col">
+                <label class="search-dlg-radio"><input type="radio" v-model="searchDirection" value="forward" /> 向前</label>
+              </div>
+              <div class="search-dlg-radio-col">
+                <label class="search-dlg-radio"><input type="radio" v-model="searchDirection" value="backward" /> 向后</label>
+              </div>
+            </div>
+            <!-- 搜索范围 -->
+            <div class="search-dlg-radio-group">
+              <div class="search-dlg-radio-col">
+                <label class="search-dlg-radio"><input type="radio" v-model="searchScope" value="all" /> 所有，并列出匹配</label>
+              </div>
+              <div class="search-dlg-radio-col">
+                <label class="search-dlg-radio"><input type="radio" v-model="searchScope" value="selected" /> 在所选中搜索</label>
+                <label class="search-dlg-radio"><input type="radio" v-model="searchScope" value="current" /> 在当前页搜索</label>
+              </div>
+            </div>
           </div>
-          <div style="display:flex;gap:20px;margin-bottom:12px;font-size:13px">
-            <label><input type="checkbox" v-model="searchInContent" checked /> 节点内容</label>
-            <label><input type="checkbox" v-model="searchInName" checked /> 节点名称</label>
+          <!-- 时间筛选器 -->
+          <div class="search-dlg-section">
+            <div class="search-dlg-section-title">时间筛选器</div>
+            <div class="search-dlg-cols">
+              <div class="search-dlg-col">
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchAfterCreated" /> 在此之后创建的节点</label>
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchAfterModified" /> 在此之后修改的节点</label>
+              </div>
+              <div class="search-dlg-col">
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchBeforeCreated" /> 在此之前创建的节点</label>
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchBeforeModified" /> 在此之前修改的节点</label>
+              </div>
+            </div>
           </div>
-          <div v-if="searchAllResults.length > 0" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:4px">
-            <div style="padding:4px 10px;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border)">找到 {{ searchAllResults.length }} 个结果</div>
-            <div v-for="r in searchAllResults" :key="r.id" class="search-result-item" style="padding:6px 10px;cursor:pointer" @click="onSearchResultClick(r)">
-              <span style="margin-right:6px">{{ r.icon || '📄' }}</span>
-              <strong>{{ r.name }}</strong>
-              <div v-if="r.snippet" style="font-size:12px;color:var(--text-muted);margin-left:22px;margin-top:2px">{{ r.snippet }}</div>
+          <!-- 搜索范围补充 -->
+          <div class="search-dlg-section">
+            <div class="search-dlg-cols">
+              <div class="search-dlg-col">
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchInContent" /> 节点内容</label>
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchOnlySelected" /> 仅已选择的节点及其子节点</label>
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchShowLoop" /> 显示循环搜索/替换对话框</label>
+              </div>
+              <div class="search-dlg-col">
+                <label class="search-dlg-check"><input type="checkbox" v-model="searchInName" /> 节点名和标签</label>
+              </div>
+            </div>
+          </div>
+          <!-- 搜索结果 -->
+          <div v-if="searchAllResults.length > 0" class="search-dlg-results">
+            <div class="search-dlg-results-header">找到 {{ searchAllResults.length }} 个结果</div>
+            <div class="search-dlg-results-list">
+              <div v-for="r in searchAllResults" :key="r.id" class="search-dlg-result-item" @click="onSearchResultClick(r)">
+                <span class="search-dlg-result-icon">{{ r.icon || '📄' }}</span>
+                <div>
+                  <div class="search-dlg-result-name">{{ r.name }}</div>
+                  <div v-if="r.snippet" class="search-dlg-result-snippet">{{ r.snippet }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" @click="searchDlg = false">取消</button>
-          <button class="modal-btn modal-btn-ok" @click="execSearchAll">搜索</button>
+        <div class="search-dlg-footer">
+          <button class="modal-btn modal-btn-cancel" @click="searchDlg = false"><span style="margin-right:4px">✕</span>取消(C)</button>
+          <button class="modal-btn modal-btn-ok" @click="execSearchAll"><span style="margin-right:4px">→</span>确定(O)</button>
         </div>
       </div>
     </div>
@@ -410,10 +487,15 @@ const infoDlg = ref(false); const nodeInfo = ref(null)
 const idDlg = ref(false); const newId = ref(0)
 const iconDlg = ref(false); const colorDlg = ref(false)
 
-/* 全局搜索对话框 */
+/* 搜索对话框 */
 const searchDlg = ref(false); const searchAllKw = ref(''); const searchAllInput = ref(null)
 const searchMatchCase = ref(false); const searchWholeWord = ref(false); const searchRegex = ref(false)
+const searchNoAccent = ref(false); const searchWordStart = ref(false); const searchOverrideExclude = ref(false)
+const searchMultiWord = ref('exact'); const searchDirection = ref('forward'); const searchScope = ref('all')
+const searchAfterCreated = ref(false); const searchBeforeCreated = ref(false)
+const searchAfterModified = ref(false); const searchBeforeModified = ref(false)
 const searchInContent = ref(true); const searchInName = ref(true)
+const searchOnlySelected = ref(false); const searchShowLoop = ref(true)
 const searchAllResults = ref([])
 
 /* 设置对话框 */
