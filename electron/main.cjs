@@ -252,7 +252,7 @@ function buildMenu() {
     { label: '帮助(H)', submenu: [
       { label: '关于 LimeTree', click: () => dialog.showMessageBox(mainWindow, {
         type: 'info', title: '关于 LimeTree', message: 'LimeTree v2.0.0',
-        detail: '树形笔记本软件\n\n- 图片/表格/代码框可拖拽缩放\n- Markdown 格式存储\n- 节点时间戳\n\nGitHub: https://github.com/huanggshou/LimeTree',
+        detail: '树形笔记本软件\n\n- 图片/表格/代码框可拖拽缩放\n- Markdown 格式存储\n- 节点时间戳\n\nGitHub: https://github.com/cornelius150/LimeTree',
         icon: path.join(__dirname, '..', 'build', 'icon.ico')
       })}
     ]}
