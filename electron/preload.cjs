@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('api', {
-  // 树
+  // Tree
   getTree: () => ipcRenderer.invoke('db:get-tree'),
   getNode: (id) => ipcRenderer.invoke('db:get-node', id),
   createNode: (d) => ipcRenderer.invoke('db:create-node', d),
@@ -17,23 +17,21 @@ contextBridge.exposeInMainWorld('api', {
   pasteNode: (d) => ipcRenderer.invoke('db:paste-node', d),
   sortChildren: (id) => ipcRenderer.invoke('db:sort-children', id),
   sortTree: () => ipcRenderer.invoke('db:sort-tree'),
-  changeNodeId: (d) => ipcRenderer.invoke('db:change-id', d),
   expandAll: () => ipcRenderer.invoke('db:expand-all'),
   collapseAll: () => ipcRenderer.invoke('db:collapse-all'),
   nodeInfo: (id) => ipcRenderer.invoke('db:node-info', id),
   replaceAllNodes: (d) => ipcRenderer.invoke('replace:all', d),
-  // 书签
+  // Bookmarks
   bmAdd: (id) => ipcRenderer.invoke('bm:add', id),
   bmRemove: (id) => ipcRenderer.invoke('bm:remove', id),
   bmList: () => ipcRenderer.invoke('bm:list'),
-  bmMove: (d) => ipcRenderer.invoke('bm:move', d),
-  // 文档
+  // Document
   openDoc: () => ipcRenderer.invoke('doc:open'),
   saveDoc: () => ipcRenderer.invoke('doc:save'),
   saveDocAs: () => ipcRenderer.invoke('doc:save-as'),
   newInstance: () => ipcRenderer.invoke('doc:new-instance'),
   printDoc: () => ipcRenderer.invoke('doc:print'),
-  // 导入导出
+  // Import / Export
   importTxt: () => ipcRenderer.invoke('imp:txt'),
   importTxtFolder: () => ipcRenderer.invoke('imp:txt-folder'),
   importHtml: () => ipcRenderer.invoke('imp:html'),
@@ -41,19 +39,19 @@ contextBridge.exposeInMainWorld('api', {
   exportTxt: (d) => ipcRenderer.invoke('exp:txt', d),
   exportHtml: (d) => ipcRenderer.invoke('exp:html', d),
   exportPdf: (d) => ipcRenderer.invoke('exp:pdf', d),
-  // 对话框/剪贴板
+  // Dialogs / Clipboard
   selectImage: () => ipcRenderer.invoke('dialog:select-image'),
   clipboardReadText: () => ipcRenderer.invoke('clipboard:read-text'),
   clipboardWriteText: (t) => ipcRenderer.invoke('clipboard:write-text', t),
-  // ===== 单通道菜单事件 =====
+  // ===== Single-channel menu event =====
   onMenuAction: (cb) => {
-    const h = (e, action) => cb(action)
+    const h = (e, action) => { try { cb(action) } catch(err) { console.error('onMenuAction callback error:', err) } }
     ipcRenderer.on('menu-action', h)
-    return () => ipcRenderer.removeListener('menu-action', h)
+    return () => { try { ipcRenderer.removeListener('menu-action', h) } catch(e) {} }
   },
   onReload: (cb) => {
-    const h = () => cb()
+    const h = () => { try { cb() } catch(err) { console.error('onReload callback error:', err) } }
     ipcRenderer.on('doc:reloaded', h)
-    return () => ipcRenderer.removeListener('doc:reloaded', h)
+    return () => { try { ipcRenderer.removeListener('doc:reloaded', h) } catch(e) {} }
   }
 })
