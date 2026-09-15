@@ -2,122 +2,83 @@
   <div class="editor-area">
     <!-- ============ CherryTree 式工具栏 ============ -->
     <div class="editor-toolbar" v-if="editor && showToolbar">
-      <!-- 组1: 节点新建 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:add-node')" title="新建根节点">
-        <svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6" fill="#e74c3c"/><rect x="6" y="17" width="12" height="4" rx="1" fill="#27ae60"/><text x="12" y="20" font-size="8" fill="#fff" text-anchor="middle">+</text></svg>
+      <!-- 组1: 新建节点 -->
+      <button class="tb-btn" @click="$emit('app-menu', 'menu:add-node')" title="新建同级节点 (Ctrl+N)">
+        <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6" fill="#e74c3c"/><rect x="7" y="16" width="10" height="5" rx="1" fill="#27ae60"/><text x="12" y="20" font-size="9" fill="#fff" text-anchor="middle" font-weight="bold">+</text></svg>
       </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:add-child')" title="新建子节点">
-        <svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" fill="#e74c3c"/><line x1="12" y1="13" x2="12" y2="18" stroke="#999" stroke-width="1.5"/><circle cx="12" cy="20" r="3" fill="#e74c3c"/><rect x="8" y="22" width="8" height="3" rx="1" fill="#27ae60"/></svg>
+      <button class="tb-btn" @click="$emit('app-menu', 'menu:add-child')" title="新建子节点 (Ctrl+J)">
+        <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="7" r="5" fill="#e74c3c"/><line x1="12" y1="12" x2="12" y2="17" stroke="#999" stroke-width="1.5"/><circle cx="12" cy="19" r="4" fill="#e74c3c"/><rect x="8" y="21" width="8" height="3" rx="1" fill="#27ae60"/><text x="12" y="23" font-size="7" fill="#fff" text-anchor="middle" font-weight="bold">+</text></svg>
       </button>
       <span class="tb-sep"></span>
-      <!-- 组2: 撤销重做 -->
-      <button class="tb-btn" @click="editor.chain().focus().undo().run()" :disabled="!editor.can().undo()" title="撤销 (Ctrl+Z)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>
+      <!-- 组2: 后退/前进导航 -->
+      <button class="tb-btn" @click="$emit('app-menu', 'menu:go-back')" title="后退">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2.5"><path d="M20 12H8M14 6l-6 6 6 6"/></svg>
       </button>
-      <button class="tb-btn" @click="editor.chain().focus().redo().run()" :disabled="!editor.can().redo()" title="重做 (Ctrl+Y)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></svg>
+      <button class="tb-btn" @click="$emit('app-menu', 'menu:go-forward')" title="前进">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2.5"><path d="M4 12h12M10 6l6 6-6 6"/></svg>
       </button>
       <span class="tb-sep"></span>
       <!-- 组3: 文件操作 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:open')" title="打开笔记">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l3-3h5l2 3h8v11H3V7z" fill="#f5a623" stroke="#f5a623"/></svg>
+      <button class="tb-btn" @click="$emit('app-menu', 'menu:open')" title="打开笔记文件 (Ctrl+O)">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M3 7l3-3h5l2 3h8v11H3V7z" fill="#f5a623" stroke="#d48800" stroke-width="1"/></svg>
       </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:save')" title="保存笔记 (Ctrl+S)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14v18H5V3z M5 3v6h10V3 M8 13h8v6H8z" fill="#9b59b6" stroke="#9b59b6"/></svg>
+      <button class="tb-btn" @click="$emit('app-menu', 'menu:save')" title="保存 (Ctrl+S)">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3h14v18H5V3z M5 3v6h10V3 M8 13h8v6H8z" fill="#9b59b6" stroke="#7d4ea0" stroke-width="1"/></svg>
       </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:save-as')" title="另存为">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14v18H5V3z M5 3v6h10V3 M8 13h8v6H8z" fill="#9b59b6" stroke="#9b59b6"/><line x1="2" y1="20" x2="8" y2="20" stroke="#e74c3c" stroke-width="2"/></svg>
+      <button class="tb-btn" @click="$emit('app-menu', 'menu:exp-pdf')" title="导出">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6V2z" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/><path d="M10 14l-3 3 3 3M14 14l3 3-3 3" stroke="#fff" stroke-width="1.5" fill="none"/></svg>
       </button>
       <span class="tb-sep"></span>
       <!-- 组4: 搜索 -->
       <button class="tb-btn" @click="openFind" title="查找 (Ctrl+F)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/><circle cx="11" cy="11" r="2" fill="#e74c3c"/></svg>
       </button>
       <span class="tb-sep"></span>
       <!-- 组5: 列表与缩进 -->
-      <button class="tb-btn" :class="{active: editor.isActive('bulletList')}" @click="editor.chain().focus().toggleBulletList().run()" title="项目符号列表">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="4" cy="6" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="4" cy="18" r="2"/><rect x="9" y="4" width="13" height="4" rx="1"/><rect x="9" y="10" width="13" height="4" rx="1"/><rect x="9" y="16" width="13" height="4" rx="1"/></svg>
+      <button class="tb-btn" :class="{active: editor.isActive('bulletList')}" @click="editor.chain().focus().toggleBulletList().run()" title="无序列表">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="4" cy="6" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="4" cy="18" r="2"/><rect x="9" y="4" width="13" height="4" rx="1"/><rect x="9" y="10" width="13" height="4" rx="1"/><rect x="9" y="16" width="13" height="4" rx="1"/></svg>
       </button>
-      <button class="tb-btn" :class="{active: editor.isActive('orderedList')}" @click="editor.chain().focus().toggleOrderedList().run()" title="编号列表">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><text x="1" y="8" font-size="7" font-weight="bold">1.</text><text x="1" y="15" font-size="7" font-weight="bold">2.</text><text x="1" y="22" font-size="7" font-weight="bold">3.</text><rect x="8" y="4" width="14" height="3" rx="1"/><rect x="8" y="11" width="14" height="3" rx="1"/><rect x="8" y="18" width="14" height="3" rx="1"/></svg>
+      <button class="tb-btn" :class="{active: editor.isActive('orderedList')}" @click="editor.chain().focus().toggleOrderedList().run()" title="有序编号列表">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><text x="1" y="8" font-size="7" font-weight="bold">1.</text><text x="1" y="15" font-size="7" font-weight="bold">2.</text><text x="1" y="22" font-size="7" font-weight="bold">3.</text><rect x="8" y="4" width="14" height="3" rx="1"/><rect x="8" y="11" width="14" height="3" rx="1"/><rect x="8" y="18" width="14" height="3" rx="1"/></svg>
       </button>
-      <button class="tb-btn" :class="{active: isTodoList}" @click="toggleTodoList" title="待办事项列表">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="6" height="6" rx="1"/><path d="M4 7l2 2 3-4" stroke="#27ae60"/><rect x="3" y="12" width="6" height="6" rx="1"/><rect x="3" y="20" width="6" height="2" rx="1"/><line x1="12" y1="7" x2="22" y2="7"/><line x1="12" y1="15" x2="22" y2="15"/></svg>
+      <button class="tb-btn" :class="{active: isTodoList}" @click="toggleTodoList" title="待办列表">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="6" height="6" rx="1"/><path d="M4 7l2 2 3-4" stroke="#27ae60"/><rect x="3" y="12" width="6" height="6" rx="1"/><line x1="12" y1="7" x2="22" y2="7"/><line x1="12" y1="15" x2="22" y2="15"/></svg>
       </button>
       <button class="tb-btn" @click="editor.chain().focus().sinkListItem('listItem').run()" title="增加缩进">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><path d="M3 6h18 M3 12h18 M3 18h18"/><path d="M8 9l3 3-3 3" stroke="#3498db"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e44ad" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M8 9l3 3-3 3"/></svg>
       </button>
       <button class="tb-btn" @click="editor.chain().focus().liftListItem('listItem').run()" title="减少缩进">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><path d="M3 6h18 M3 12h18 M3 18h18"/><path d="M11 9l-3 3 3 3" stroke="#3498db"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e44ad" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M11 9l-3 3 3 3"/></svg>
       </button>
       <span class="tb-sep"></span>
-      <!-- 组6: 元素插入 -->
+      <!-- 组6: 插入元素 -->
       <button class="tb-btn" @click="insertImage" title="插入图片（可拖拽缩放）">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="8" cy="9" r="2"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="8" cy="9" r="2"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
       </button>
       <button class="tb-btn" @click="insertTable" title="插入表格（可拖拽缩放列宽）">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
       </button>
       <button class="tb-btn" @click="insertCodeBlock" title="插入代码框（可拖拽缩放）">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-5 6 5 6 M16 6l5 6-5 6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>
       </button>
-      <button class="tb-btn" @click="toggleLink" title="插入链接">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6"/><path d="M8 12l-3 3a4 4 0 0 0 6 6l3-3"/><path d="M16 12l3-3a4 4 0 0 0-6-6l-3 3"/></svg>
+      <button class="tb-btn" @click="toggleLink" title="插入超链接">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6"/><path d="M8 12l-3 3a4 4 0 0 0 6 6l3-3"/><path d="M16 12l3-3a4 4 0 0 0-6-6l-3 3"/></svg>
       </button>
-      <button class="tb-btn" @click="stripLink" title="取消链接">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6"/><path d="M8 12l-3 3a4 4 0 0 0 5 5"/><path d="M16 12l3-3a4 4 0 0 0-5-5"/><line x1="3" y1="3" x2="21" y2="21" stroke="#e74c3c"/></svg>
+      <button class="tb-btn" @click="stripLink" title="取消超链接">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6"/><path d="M8 12l-3 3a4 4 0 0 0 5 5"/><path d="M16 12l3-3a4 4 0 0 0-5-5"/><line x1="3" y1="3" x2="21" y2="21" stroke="#e74c3c"/></svg>
+      </button>
+      <button class="tb-btn" @click="insertAnchor" title="插入锚点">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M12 7v13M5 12a7 7 0 0 0 14 0"/></svg>
       </button>
       <span class="tb-sep"></span>
-      <!-- 组7: 文本格式 -->
-      <button class="tb-btn" @click="pickTextColor" title="字体颜色 (Ctrl+Shift+T)">
-        <svg width="18" height="18" viewBox="0 0 24 24"><text x="5" y="16" font-size="14" font-weight="bold" fill="#e74c3c">A</text><path d="M3 18h18v2H3z" fill="#e91e63"/></svg>
-      </button>
-      <button class="tb-btn" @click="pickBgColor" title="文本背景色 (Ctrl+Shift+H)">
-        <svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="#fffacd"/><text x="5" y="16" font-size="14" font-weight="bold" fill="#3498db">A</text></svg>
-      </button>
-      <button class="tb-btn" @click="toggleHighlight" title="快速高亮">
-        <svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="#fffacd"/><text x="5" y="16" font-size="14" font-weight="bold" fill="#333">A</text></svg>
-      </button>
-      <button class="tb-btn" :class="{active: editor.isActive('bold')}" @click="editor.chain().focus().toggleBold().run()" title="加粗 (Ctrl+B)"><b style="font-size:15px">B</b></button>
-      <button class="tb-btn" :class="{active: editor.isActive('italic')}" @click="editor.chain().focus().toggleItalic().run()" title="斜体 (Ctrl+I)"><i style="font-size:15px">I</i></button>
-      <button class="tb-btn" :class="{active: editor.isActive('underline')}" @click="editor.chain().focus().toggleUnderline().run()" title="下划线 (Ctrl+U)"><u style="font-size:15px">U</u></button>
-      <button class="tb-btn" :class="{active: editor.isActive('strike')}" @click="editor.chain().focus().toggleStrike().run()" title="删除线"><s style="font-size:15px">S</s></button>
-      <span class="tb-sep"></span>
-      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:1})}" @click="editor.chain().focus().toggleHeading({level:1}).run()" title="标题1">H1</button>
-      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:2})}" @click="editor.chain().focus().toggleHeading({level:2}).run()" title="标题2">H2</button>
-      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:3})}" @click="editor.chain().focus().toggleHeading({level:3}).run()" title="标题3">H3</button>
-      <button class="tb-btn" :class="{active: editor.isActive('code')}" @click="editor.chain().focus().toggleCode().run()" title="行内代码"><code style="font-size:12px">&lt;/&gt;</code></button>
-      <span class="tb-sep"></span>
-      <button class="tb-btn" @click="insertTimestamp" title="插入时间戳 (Ctrl+;)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg>
-      </button>
+      <!-- 组7: 格式化 — 清除格式/颜色/高亮/粗斜下删 -->
       <button class="tb-btn" @click="editor.chain().focus().unsetAllMarks().clearNodes().run()" title="清除格式">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="4" y="16" font-size="12" font-weight="bold">A</text><line x1="3" y1="20" x2="21" y2="4" stroke="#e74c3c"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="4" y="16" font-size="13" font-weight="bold">A</text><line x1="3" y1="20" x2="21" y2="4" stroke="#e74c3c"/></svg>
       </button>
-      <span class="tb-sep"></span>
-      <!-- 组8: 字体与字号 -->
-      <select class="tb-select" @change="onFontFamilyChange($event)" title="字体">
-        <option value="">默认字体</option>
-        <option v-for="f in fontFamilies" :key="f" :value="f" :style="{ fontFamily: f }">{{ f }}</option>
-      </select>
-      <select class="tb-select" @change="onFontSizeChange($event)" title="字号">
-        <option value="">字号</option>
-        <option value="10">10pt</option>
-        <option value="11">11pt</option>
-        <option value="12">12pt</option>
-        <option value="14">14pt</option>
-        <option value="16">16pt</option>
-        <option value="18">18pt</option>
-        <option value="20">20pt</option>
-        <option value="24">24pt</option>
-        <option value="28">28pt</option>
-        <option value="32">32pt</option>
-      </select>
-      <span class="tb-sep"></span>
-      <!-- 组9: 颜色面板 -->
+      <!-- 字体颜色面板 -->
       <div class="tb-color-wrap">
-        <button class="tb-btn" @click="showColorPicker = !showColorPicker" title="字体颜色">
-          <svg width="18" height="18" viewBox="0 0 24 24"><text x="5" y="16" font-size="14" font-weight="bold" :fill="currentColor">A</text><path d="M3 18h18v2H3z" fill="#e91e63"/></svg>
+        <button class="tb-btn" @click="showColorPicker = !showColorPicker" title="文字颜色 (Ctrl+Shift+T)">
+          <svg width="20" height="20" viewBox="0 0 24 24"><text x="5" y="16" font-size="14" font-weight="bold" :fill="currentColor">A</text><path d="M3 18h18v2H3z" fill="#e91e63"/></svg>
         </button>
         <div v-if="showColorPicker" class="tb-color-dd" @click.stop>
           <div class="tb-color-grid">
@@ -125,9 +86,10 @@
           </div>
         </div>
       </div>
+      <!-- 背景色面板 -->
       <div class="tb-color-wrap">
-        <button class="tb-btn" @click="showBgPicker = !showBgPicker" title="背景色">
-          <svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" :fill="currentBgColor"/><text x="5" y="16" font-size="14" font-weight="bold" fill="#333">A</text></svg>
+        <button class="tb-btn" @click="showBgPicker = !showBgPicker" title="文字背景色 (Ctrl+Shift+H)">
+          <svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" :fill="currentBgColor"/><text x="5" y="16" font-size="14" font-weight="bold" fill="#333">A</text></svg>
         </button>
         <div v-if="showBgPicker" class="tb-color-dd" @click.stop>
           <div class="tb-color-grid">
@@ -135,13 +97,35 @@
           </div>
         </div>
       </div>
+      <button class="tb-btn" :class="{active: editor.isActive('bold')}" @click="editor.chain().focus().toggleBold().run()" title="加粗 (Ctrl+B)"><b style="font-size:15px">A</b></button>
+      <button class="tb-btn" :class="{active: editor.isActive('italic')}" @click="editor.chain().focus().toggleItalic().run()" title="斜体 (Ctrl+I)"><i style="font-size:15px">A</i></button>
+      <button class="tb-btn" :class="{active: editor.isActive('underline')}" @click="editor.chain().focus().toggleUnderline().run()" title="下划线 (Ctrl+U)"><u style="font-size:15px">A</u></button>
+      <button class="tb-btn" :class="{active: editor.isActive('strike')}" @click="editor.chain().focus().toggleStrike().run()" title="删除线"><s style="font-size:15px">A</s></button>
       <span class="tb-sep"></span>
-      <!-- 组10: 段落缩进 -->
-      <button class="tb-btn" @click="editor.chain().focus().sinkListItem('listItem').run()" title="增加段落缩进">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18 M3 12h18 M3 18h18"/><path d="M8 9l3 3-3 3"/></svg>
-      </button>
-      <button class="tb-btn" @click="editor.chain().focus().liftListItem('listItem').run()" title="减少段落缩进">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18 M3 12h18 M3 18h18"/><path d="M11 9l-3 3 3 3"/></svg>
+      <!-- 组8: 标题/代码/上标下标 -->
+      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:1})}" @click="editor.chain().focus().toggleHeading({level:1}).run()" title="标题1">h1</button>
+      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:2})}" @click="editor.chain().focus().toggleHeading({level:2}).run()" title="标题2">h2</button>
+      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:3})}" @click="editor.chain().focus().toggleHeading({level:3}).run()" title="标题3">h3</button>
+      <button class="tb-btn tb-text" @click="editor.chain().focus().toggleStrike().run()" title="删除线(s)">s</button>
+      <button class="tb-btn tb-text" @click="toggleSuperscript" title="上标"><span style="font-size:11px;vertical-align:super">a</span><span style="font-size:8px;vertical-align:super">s</span></button>
+      <button class="tb-btn tb-text" @click="toggleSubscript" title="下标"><span style="font-size:11px;vertical-align:sub">a</span><span style="font-size:8px;vertical-align:sub">s</span></button>
+      <button class="tb-btn tb-text" :class="{active: editor.isActive('code')}" @click="editor.chain().focus().toggleCode().run()" title="等宽行内代码(ms)"><span style="font-family:monospace;font-size:12px">ms</span></button>
+      <span class="tb-sep"></span>
+      <!-- 组9: 字体与字号 -->
+      <select class="tb-select" @change="onFontFamilyChange($event)" title="字体">
+        <option value="">字体</option>
+        <option v-for="f in fontFamilies" :key="f" :value="f" :style="{ fontFamily: f }">{{ f }}</option>
+      </select>
+      <select class="tb-select" @change="onFontSizeChange($event)" title="字号">
+        <option value="">字号</option>
+        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+        <option value="14">14</option><option value="16">16</option><option value="18">18</option>
+        <option value="20">20</option><option value="24">24</option><option value="28">28</option><option value="32">32</option>
+      </select>
+      <span class="tb-sep"></span>
+      <!-- 组10: 时间戳 -->
+      <button class="tb-btn" @click="insertTimestamp" title="插入时间戳 (Ctrl+;)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg>
       </button>
     </div>
 
@@ -483,6 +467,18 @@ function toggleLink() {
   hideCtx()
 }
 function stripLink() { editor.value.chain().focus().extendMarkRange('link').unsetLink().run(); hideCtx() }
+
+/* ---------- 锚点 ---------- */
+function insertAnchor() {
+  const name = prompt('请输入锚点名称：', 'anchor')
+  if (!name) return
+  editor.value.chain().focus().insertContent(`<a name="${name}">⚓ ${name}</a>`).run()
+  hideCtx()
+}
+
+/* ---------- 上标/下标 ---------- */
+function toggleSuperscript() { editor.value.chain().focus().toggleMark('superscript').run() }
+function toggleSubscript() { editor.value.chain().focus().toggleMark('subscript').run() }
 
 /* ---------- 查找/替换（window.find） ---------- */
 function openFind() { findBar.value = true; setTimeout(() => findInput.value?.focus(), 50); hideCtx() }
