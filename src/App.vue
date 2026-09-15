@@ -203,6 +203,177 @@
         </div>
       </div>
     </div>
+
+    <!-- ================= 设置对话框 ================= -->
+    <div v-if="settingsDlg" class="modal-overlay" @click.self="settingsDlg = false">
+      <div class="modal-dialog settings-dialog">
+        <div class="settings-header">
+          <img src="./assets/lime-icon-small.png" alt="LimeTree" class="settings-logo" />
+          <span class="settings-title-text">设置</span>
+          <button class="settings-close-btn" @click="settingsDlg = false">✕</button>
+        </div>
+        <div class="settings-body">
+          <div class="settings-sidebar">
+            <div class="settings-cat" :class="{active: settingsTab==='text-code'}" @click="settingsTab='text-code'">纯文本和代码</div>
+            <div class="settings-cat" :class="{active: settingsTab==='rich'}" @click="settingsTab='rich'">富文本</div>
+            <div class="settings-cat" :class="{active: settingsTab==='format'}" @click="settingsTab='format'">格式化</div>
+            <div class="settings-cat" :class="{active: settingsTab==='special'}" @click="settingsTab='special'">特殊字符</div>
+            <div class="settings-cat-group">树型资源管理器</div>
+            <div class="settings-cat sub" :class="{active: settingsTab==='theme'}" @click="settingsTab='theme'">主题</div>
+            <div class="settings-cat sub" :class="{active: settingsTab==='interface'}" @click="settingsTab='interface'">界面</div>
+            <div class="settings-cat sub" :class="{active: settingsTab==='links'}" @click="settingsTab='links'">链接</div>
+            <div class="settings-cat sub" :class="{active: settingsTab==='toolbar'}" @click="settingsTab='toolbar'">工具栏</div>
+            <div class="settings-cat sub" :class="{active: settingsTab==='shortcuts'}" @click="settingsTab='shortcuts'">快捷键</div>
+            <div class="settings-cat sub" :class="{active: settingsTab==='misc'}" @click="settingsTab='misc'">杂项</div>
+          </div>
+          <div class="settings-content">
+            <!-- 纯文本和代码 -->
+            <div v-if="settingsTab==='text-code'">
+              <div class="settings-section-title">树型资源管理器</div>
+              <label class="settings-radio"><input type="radio" v-model="settings.textCodeScheme" value="light" /> 浅色背景，深色文字</label>
+              <label class="settings-radio"><input type="radio" v-model="settings.textCodeScheme" value="dark" /> 深色背景，浅色文字</label>
+              <label class="settings-radio"><input type="radio" v-model="settings.textCodeScheme" value="custom" /> 自定义背景</label>
+              <div v-if="settings.textCodeScheme==='custom'" class="settings-color-row">
+                <div class="settings-color-item"><span>文字颜色</span><input type="color" v-model="settings.tcFgColor" /></div>
+                <div class="settings-color-item"><span>背景颜色</span><input type="color" v-model="settings.tcBgColor" /></div>
+                <div class="settings-color-item"><span>选中背景</span><input type="color" v-model="settings.tcSelBg" /></div>
+              </div>
+              <div class="settings-section-title" style="margin-top:16px">样式方案</div>
+              <div class="settings-field"><label>纯文本</label><select v-model="settings.plainStyle" class="settings-select"><option value="default">默认</option><option value="solarized-light">Solarized Light</option><option value="solarized-dark">Solarized Dark</option><option value="monokai">Monokai</option></select></div>
+              <div class="settings-field"><label>编码</label><select v-model="settings.codeStyle" class="settings-select"><option value="default">默认</option><option value="kate">Kate</option><option value="cobalt-darkened">Cobalt Dark</option><option value="monokai">Monokai</option></select></div>
+            </div>
+            <!-- 富文本 -->
+            <div v-if="settingsTab==='rich'">
+              <div class="settings-section-title">树型资源管理器</div>
+              <label class="settings-radio"><input type="radio" v-model="settings.richScheme" value="light" /> 浅色背景，深色文字</label>
+              <label class="settings-radio"><input type="radio" v-model="settings.richScheme" value="dark" /> 深色背景，浅色文字</label>
+              <label class="settings-radio"><input type="radio" v-model="settings.richScheme" value="custom" /> 自定义背景</label>
+              <div v-if="settings.richScheme==='custom'" class="settings-color-row">
+                <div class="settings-color-item"><span>普通文字颜色</span><input type="color" v-model="settings.richFgColor" /></div>
+                <div class="settings-color-item"><span>选中区域背景</span><input type="color" v-model="settings.richSelBg" /></div>
+                <div class="settings-color-item"><span>选中区域文字</span><input type="color" v-model="settings.richSelFg" /></div>
+              </div>
+              <div class="settings-section-title" style="margin-top:16px">样式方案</div>
+              <div class="settings-field"><label>富文本</label><select v-model="settings.richStyle" class="settings-select"><option value="default">默认</option><option value="solarized-light">Solarized Light</option><option value="amy">Amy</option></select></div>
+              <div class="settings-section-title" style="margin-top:16px">样式方案编辑器</div>
+              <div class="settings-tabs"><span class="settings-tab" :class="{active: settings.userTab==='user-1'}" @click="settings.userTab='user-1'">user-1</span><span class="settings-tab" :class="{active: settings.userTab==='user-2'}" @click="settings.userTab='user-2'">user-2</span></div>
+              <div class="settings-color-grid">
+                <div class="settings-color-item"><span>文本前景</span><input type="color" v-model="settings.styleFg" /></div>
+                <div class="settings-color-item"><span>文本背景</span><input type="color" v-model="settings.styleBg" /></div>
+                <div class="settings-color-item"><span>选择前景</span><input type="color" v-model="settings.styleSelFg" /></div>
+                <div class="settings-color-item"><span>选择背景</span><input type="color" v-model="settings.styleSelBg" /></div>
+                <div class="settings-color-item"><span>光标</span><input type="color" v-model="settings.styleCursor" /></div>
+                <div class="settings-color-item"><span>当前行背景</span><input type="color" v-model="settings.styleCurLine" /></div>
+                <div class="settings-color-item"><span>行号前景</span><input type="color" v-model="settings.styleLnFg" /></div>
+                <div class="settings-color-item"><span>行号背景</span><input type="color" v-model="settings.styleLnBg" /></div>
+              </div>
+              <div class="settings-section-title" style="margin-top:16px">图标主题</div>
+              <div class="settings-icon-theme">
+                <button class="settings-icon-btn" :class="{active: settings.iconTheme==='dark'}" @click="settings.iconTheme='dark'">深色主题图标</button>
+                <button class="settings-icon-btn" :class="{active: settings.iconTheme==='light'}" @click="settings.iconTheme='light'">浅色主题图标</button>
+                <button class="settings-icon-btn" :class="{active: settings.iconTheme==='system'}" @click="settings.iconTheme='system'">系统默认图标</button>
+              </div>
+            </div>
+            <!-- 格式化 -->
+            <div v-if="settingsTab==='format'">
+              <div class="settings-section-title">格式化选项</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.fmtShowLineNumbers" /> 显示行号</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.fmtWordWrap" /> 自动换行</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.fmtShowWhitespace" /> 显示空白字符</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.fmtShowLineEndings" /> 显示行结尾字符</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.fmtAutoIndent" /> 自动缩进</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.fmtSmartIndent" /> 智能缩进</label>
+              <div class="settings-section-title" style="margin-top:16px">制表符</div>
+              <div class="settings-field"><label>制表符宽度</label><select v-model="settings.tabWidth" class="settings-select"><option value="2">2 空格</option><option value="4">4 空格</option><option value="8">8 空格</option></select></div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.useSpaces" /> 用空格代替制表符</label>
+            </div>
+            <!-- 特殊字符 -->
+            <div v-if="settingsTab==='special'">
+              <div class="settings-section-title">特殊字符替换</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.autoReplace" /> 自动替换特殊字符</label>
+              <div class="settings-field"><label>替换规则</label></div>
+              <div class="settings-replace-list">
+                <div class="settings-replace-item" v-for="(r, i) in settings.replaceRules" :key="i"><input type="text" v-model="r.from" placeholder="原始字符" class="settings-input" /><span>→</span><input type="text" v-model="r.to" placeholder="替换为" class="settings-input" /></div>
+              </div>
+              <button class="settings-add-btn" @click="settings.replaceRules.push({from:'',to:''})">+ 添加规则</button>
+            </div>
+            <!-- 主题 -->
+            <div v-if="settingsTab==='theme'">
+              <div class="settings-section-title">界面主题</div>
+              <label class="settings-radio"><input type="radio" v-model="settings.theme" value="light" /> 浅色主题</label>
+              <label class="settings-radio"><input type="radio" v-model="settings.theme" value="dark" /> 深色主题</label>
+              <label class="settings-radio"><input type="radio" v-model="settings.theme" value="system" /> 跟随系统</label>
+              <div class="settings-section-title" style="margin-top:16px">配色方案</div>
+              <div class="settings-color-row">
+                <div class="settings-color-item"><span>侧边栏背景</span><input type="color" v-model="settings.uiSidebarBg" /></div>
+                <div class="settings-color-item"><span>编辑区背景</span><input type="color" v-model="settings.uiEditorBg" /></div>
+                <div class="settings-color-item"><span>工具栏背景</span><input type="color" v-model="settings.uiToolbarBg" /></div>
+                <div class="settings-color-item"><span>节点选中色</span><input type="color" v-model="settings.uiSelColor" /></div>
+                <div class="settings-color-item"><span>强调色</span><input type="color" v-model="settings.uiAccent" /></div>
+              </div>
+            </div>
+            <!-- 界面 -->
+            <div v-if="settingsTab==='interface'">
+              <div class="settings-section-title">界面设置</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.showToolbar" /> 显示工具栏</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.showTree" /> 显示树状视图</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.showBookmarkBar" /> 显示书签栏</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.showStatusBar" /> 显示状态栏</label>
+              <div class="settings-section-title" style="margin-top:16px">节点显示</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.showNodeTimestamp" /> 显示节点创建时间戳</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.showNodeIcon" /> 显示节点图标</label>
+              <div class="settings-field" style="margin-top:12px"><label>节点名称字体大小</label><select v-model="settings.nodeFontSize" class="settings-select"><option value="12">12px</option><option value="14">14px</option><option value="16">16px</option><option value="18">18px</option></select></div>
+            </div>
+            <!-- 链接 -->
+            <div v-if="settingsTab==='links'">
+              <div class="settings-section-title">链接设置</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.linksClickable" /> 链接可点击</label>
+              <div class="settings-field"><label>链接点击动作</label><select v-model="settings.linkAction" class="settings-select"><option value="browser">在浏览器中打开</option><option value="internal">在内部打开</option><option value="ask">每次询问</option></select></div>
+              <div class="settings-section-title" style="margin-top:16px">文件链接</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.fileLinkRelative" /> 使用相对路径</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.fileLinkAutoUpdate" /> 文件移动时自动更新路径</label>
+            </div>
+            <!-- 工具栏 -->
+            <div v-if="settingsTab==='toolbar'">
+              <div class="settings-section-title">工具栏设置</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.toolbarIconsOnly" /> 仅显示图标（不显示文字）</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.toolbarLargeIcons" /> 使用大图标</label>
+              <div class="settings-section-title" style="margin-top:16px">工具栏按钮显示</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.tbNewNode" /> 新建节点</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.tbNav" /> 后退/前进</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.tbFile" /> 文件操作</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.tbSearch" /> 搜索</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.tbList" /> 列表与缩进</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.tbInsert" /> 插入元素</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.tbFormat" /> 格式化按钮</label>
+            </div>
+            <!-- 快捷键 -->
+            <div v-if="settingsTab==='shortcuts'">
+              <div class="settings-section-title">快捷键设置</div>
+              <div class="settings-shortcut-list">
+                <div class="settings-shortcut-item" v-for="sc in settings.shortcuts" :key="sc.action"><span class="settings-shortcut-action">{{ sc.action }}</span><input type="text" v-model="sc.key" class="settings-input" placeholder="快捷键" /></div>
+              </div>
+            </div>
+            <!-- 杂项 -->
+            <div v-if="settingsTab==='misc'">
+              <div class="settings-section-title">杂项设置</div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.autoSave" /> 自动保存</label>
+              <div class="settings-field" v-if="settings.autoSave"><label>自动保存间隔(秒)</label><input type="number" v-model.number="settings.autoSaveInterval" min="1" max="300" class="settings-input" /></div>
+              <label class="settings-check"><input type="checkbox" v-model="settings.backupOnSave" /> 保存时创建备份</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.confirmDelete" /> 删除节点前确认</label>
+              <label class="settings-check"><input type="checkbox" v-model="settings.rememberLastNode" /> 记住上次选中的节点</label>
+              <div class="settings-section-title" style="margin-top:16px">保存格式</div>
+              <label class="settings-radio"><input type="radio" v-model="settings.saveFormat" value="md" /> Markdown (.md)</label>
+              <label class="settings-radio"><input type="radio" v-model="settings.saveFormat" value="html" /> HTML (.html)</label>
+              <label class="settings-radio"><input type="radio" v-model="settings.saveFormat" value="txt" /> 纯文本 (.txt)</label>
+            </div>
+          </div>
+        </div>
+        <div class="settings-footer">
+          <button class="modal-btn modal-btn-cancel" @click="settingsDlg = false"><span style="margin-right:4px">✕</span>关闭(C)</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -223,6 +394,8 @@ let searchTimer = null
 const menuVisible = ref(false); const menuX = ref(0); const menuY = ref(0); const menuNodeId = ref(null)
 const saveStatus = ref('已保存')
 const treeContainer = ref(null)
+let navHistory = []; let navIdx = -1
+let docPath = ''
 
 /* 视图状态 */
 const showToolbar = ref(true); const showTree = ref(true); const wrapLine = ref(true)
@@ -242,6 +415,35 @@ const searchDlg = ref(false); const searchAllKw = ref(''); const searchAllInput 
 const searchMatchCase = ref(false); const searchWholeWord = ref(false); const searchRegex = ref(false)
 const searchInContent = ref(true); const searchInName = ref(true)
 const searchAllResults = ref([])
+
+/* 设置对话框 */
+const settingsDlg = ref(false); const settingsTab = ref('rich')
+const settings = ref({
+  textCodeScheme: 'light', tcFgColor: '#333', tcBgColor: '#fff', tcSelBg: '#4a90d9',
+  richScheme: 'light', richFgColor: '#333', richSelBg: '#4a90d9', richSelFg: '#fff',
+  plainStyle: 'default', codeStyle: 'default', richStyle: 'default',
+  userTab: 'user-1',
+  styleFg: '#333', styleBg: '#fff', styleSelFg: '#fff', styleSelBg: '#4a90d9',
+  styleCursor: '#333', styleCurLine: '#f5f5f5', styleLnFg: '#999', styleLnBg: '#f0f0f0',
+  iconTheme: 'system',
+  fmtShowLineNumbers: false, fmtWordWrap: true, fmtShowWhitespace: false, fmtShowLineEndings: false,
+  fmtAutoIndent: true, fmtSmartIndent: true, tabWidth: '4', useSpaces: true,
+  autoReplace: false, replaceRules: [{from:'--',to:'—'}, {from:'...',to:'…'}],
+  theme: 'light', uiSidebarBg: '#f5f0e8', uiEditorBg: '#fefbf5', uiToolbarBg: '#f8f4ed', uiSelColor: '#4a90d9', uiAccent: '#4a90d9',
+  showToolbar: true, showTree: true, showBookmarkBar: true, showStatusBar: true,
+  showNodeTimestamp: true, showNodeIcon: true, nodeFontSize: '14',
+  linksClickable: true, linkAction: 'browser', fileLinkRelative: true, fileLinkAutoUpdate: false,
+  toolbarIconsOnly: true, toolbarLargeIcons: false,
+  tbNewNode: true, tbNav: true, tbFile: true, tbSearch: true, tbList: true, tbInsert: true, tbFormat: true,
+  shortcuts: [
+    { action: '新建节点', key: 'Ctrl+N' }, { action: '添加子节点', key: 'Ctrl+J' },
+    { action: '保存', key: 'Ctrl+S' }, { action: '查找', key: 'Ctrl+F' },
+    { action: '加粗', key: 'Ctrl+B' }, { action: '斜体', key: 'Ctrl+I' },
+    { action: '插入时间戳', key: 'Ctrl+;' }, { action: '删除节点', key: 'Delete' }
+  ],
+  autoSave: true, autoSaveInterval: 5, backupOnSave: false, confirmDelete: true, rememberLastNode: true,
+  saveFormat: 'md'
+})
 
 const iconList = ['📄','📔','📋','📌','📍','🔖','🏷','🌟','⭐','💡','🔑','🔒','🔓','🛡','⚙','🔧','🔨','🛠','💻','🖥','⌨','🖱','💾','💿','📁','📂','🗂','🗃','📦','📦','📤','📥','📨','📩','📧','📥','📝','✏','🖋','🖊','🖌','🖍','🎯','🏷','🎓','📚','📖','📰','🗞','📓','📔','📒','📕','📗','📘','📙','🔗','⛓','✅','☑','☐','❌','⛔','🔔','🔕','🎵','🎶','🎨','🎬','📷','🖼','🧩','🎲','🎮','🕹','🎰','🏆','🥇','🥈','🥉','🎁','🎂','🎉','🎊','🚀','🌍','🌎','🌏','🌐','🔬','🔭','🧪','🧫','🧬','💊','💉','🌡','🩺','🌱','🌿','☘','🍀','🍃','🌾','🌷','🌹','🌻','🌼','🌸','🌺','🍄','🌰','🎃','🐚','🪨','☀','🌙','⭐','🌟','✨','⚡','🔥','💧','🌊','❄','🌈','🍃','🌿']
 const hlColors = ['','transparent','#ffd0d0','#ffe599','#fff2cc','#d9ead3','#cfe2f3','#d9d2e9','#ffd9b3','#d0e0ff','#e6ccff','#cccccc','#ff9999','#ffcc66','#ffff66','#99cc66','#66cccc','#6666cc','#cc66cc','#ff6666','#ffaa33','#ffff00','#66cc33','#33cccc','#3366cc','#cc33cc','#808080','#cc0000','#e69100','#bf9000','#38761d','#134f5c','#0b5394','#741b47','#666666','#dd0000','#b45f06','#783f04','#274e13','#0c343d','#073763','#4c1130','#333333']
@@ -413,7 +615,20 @@ function handleMenu(ch) {
     'menu:zoom-reset': () => { zoomFactor = 1.0; document.body.style.zoom = 1 },
     'menu:check-update': () => window.open('https://github.com/cornelius150/LimeTree/releases', '_blank'),
     'menu:help': () => window.open('https://github.com/cornelius150/LimeTree#readme', '_blank'),
-    'menu:about': () => { alert('LimeTree v2.1.0\n树形笔记本软件\n\n与 CherryTree 一致的九大菜单\n图片/表格/代码框可拖拽缩放\nMarkdown 格式存储 (.md)\n节点时间戳\n\nGitHub: https://github.com/cornelius150/LimeTree') }
+    'menu:about': () => { alert('LimeTree v2.1.0\n树形笔记本软件\n\n与 CherryTree 一致的九大菜单\n图片/表格/代码框可拖拽缩放\nMarkdown 格式存储 (.md)\n节点时间戳\n\nGitHub: https://github.com/cornelius150/LimeTree') },
+    'menu:preferences': () => { settingsDlg.value = true },
+    'menu:settings': () => { settingsDlg.value = true },
+    'menu:tree-info': () => { const cnt = allNodes.value.length; alert(`树信息\n\n节点总数: ${cnt}\n根节点数: ${allNodes.value.filter(n => !n.parent_id).length}\n书签数: ${bookmarks.value.length}\n\n文档格式: Markdown (.md)`) },
+    'menu:copy-path': () => { window.api.clipboardWriteText(docPath || ''); alert('文档路径已复制到剪贴板') },
+    'menu:page-setup': () => { alert('页面设置\n\n纸张: A4\n边距: 默认\n方向: 纵向\n\n（打印设置将在打印时自动应用）') },
+    'menu:word-count': () => { if (selectedNode.value) { const c = (selectedNode.value.content || '').length; alert(`字数统计\n\n当前节点字符数: ${c}\n单词数: ${(selectedNode.value.content || '').match(/\S+/g)?.length || 0}`) } },
+    'menu:spell-check': () => { alert('拼写检查功能暂未启用') },
+    'menu:go-back': () => { if (navHistory.length > 1) { navIdx = Math.max(0, navIdx - 1); onSelect(allNodes.value.find(n => n.id === navHistory[navIdx])) } },
+    'menu:go-forward': () => { if (navIdx < navHistory.length - 1) { navIdx++; onSelect(allNodes.value.find(n => n.id === navHistory[navIdx])) } },
+    'menu:insert-anchor': () => { /* handled in editor */ window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'menu:insert-anchor' } })) },
+    'menu:insert-link': () => { window.dispatchEvent(new CustomEvent('editor-menu', { detail: { action: 'menu:insert-link' } })) },
+    'menu:insert-file': () => { alert('插入文件功能即将推出') },
+    'menu:recent-docs': () => { alert('最近文档功能即将推出') }
   }
   /* 导入不支持格式 */
   const impFmts = { 'menu:imp-ct': 'CherryTree', 'menu:imp-gnote': 'Gnote', 'menu:imp-keepnote': 'KeepNote', 'menu:imp-keynote': 'KeyNote', 'menu:imp-knowit': 'Knowit', 'menu:imp-leo': 'Leo', 'menu:imp-mempad': 'Mempad', 'menu:imp-notecase': 'NoteCase', 'menu:imp-rednotebook': 'RedNotebook', 'menu:imp-tomboy': 'Tomboy', 'menu:imp-treepad': 'TreePad', 'menu:imp-tuxcards': 'TuxCards', 'menu:imp-zim': 'Zim' }
