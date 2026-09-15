@@ -1,6 +1,6 @@
 {
   "name": "limetree",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "LimeTree - Desktop tree-structure note-taking app",
   "main": "electron/main.cjs",
   "author": "LimeTree",
@@ -57,9 +57,9 @@
     "vite": "^5.4.0"
   },
   "dependencies": {
-    "@octokit/rest": "^22.0.1",
     "@tiptap/extension-color": "^2.27.0",
     "@tiptap/extension-highlight": "^2.27.0",
+    "@tiptap/extension-link": "^2.27.0",
     "@tiptap/extension-table": "^2.27.0",
     "@tiptap/extension-table-cell": "^2.27.0",
     "@tiptap/extension-table-header": "^2.27.0",
@@ -68,7 +68,6 @@
     "@tiptap/extension-underline": "^2.27.0",
     "@tiptap/starter-kit": "^2.27.0",
     "@tiptap/vue-3": "^2.27.0",
-    "isomorphic-git": "^1.42.2",
     "sql.js": "^1.14.2",
     "tiptap-markdown": "^0.8.10",
     "vue": "^3.5.0"
