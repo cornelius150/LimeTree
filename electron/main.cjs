@@ -470,22 +470,50 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     /* ---------- 文件 ---------- */
     { label: '文件(F)', submenu: [
-      M('新建实例...', 'Ctrl+Alt+N', 'menu:new-instance'),
-      M('打开笔记文件...', 'Ctrl+O', 'menu:open'),
-      M('最近文档', null, 'menu:recent-docs', { type: 'submenu', submenu: [] }),
+      M('新建实例(N)', null, 'menu:new-instance'),
+      M('打开文件夹(L)', 'Shift+Ctrl+O', 'menu:open-folder'),
+      M('打开文件(O)', 'Ctrl+O', 'menu:open'),
+      { label: '最近文档(R)', submenu: [] },
       { type: 'separator' },
-      M('保存并清理', null, 'menu:save'),
-      M('保存', 'Ctrl+S', 'menu:save'),
-      M('另存为...', 'Ctrl+Shift+S', 'menu:save-as'),
+      { label: '导入(I)', submenu: [
+        M('从 TXT 文件导入节点...', null, 'menu:imp-txt'),
+        M('从 TXT 文件夹导入节点...', null, 'menu:imp-txt-folder'),
+        M('从 HTML 文件导入节点...', null, 'menu:imp-html'),
+        { type: 'separator' },
+        M('从 CherryTree 文档导入...', null, 'menu:imp-ct'),
+        M('从 Gnote 文件夹导入...', null, 'menu:imp-gnote'),
+        M('从 KeepNote 文件夹导入...', null, 'menu:imp-keepnote'),
+        M('从 KeyNote 文件导入...', null, 'menu:imp-keynote'),
+        M('从 Knowit 文件导入...', null, 'menu:imp-knowit'),
+        M('从 Leo 文件导入...', null, 'menu:imp-leo'),
+        M('从 Mempad 文件导入...', null, 'menu:imp-mempad'),
+        M('从 NoteCase 文件导入...', null, 'menu:imp-notecase'),
+        M('从 RedNotebook 文件夹导入...', null, 'menu:imp-rednotebook'),
+        M('从 Tomboy 文件夹导入...', null, 'menu:imp-tomboy'),
+        M('从 TreePad 文件导入...', null, 'menu:imp-treepad'),
+        M('从 TuxCards 文件导入...', null, 'menu:imp-tuxcards'),
+        M('从 Zim 文件夹导入...', null, 'menu:imp-zim')
+      ]},
+      { label: '导出(E)', submenu: [
+        M('导出为 PDF...', null, 'menu:exp-pdf'),
+        M('导出为纯文本...', null, 'menu:exp-txt'),
+        M('导出为 HTML...', null, 'menu:exp-html')
+      ]},
       { type: 'separator' },
-      M('页面设置...', null, 'menu:page-setup'),
-      M('打印...', 'Ctrl+P', 'menu:print'),
+      M('保存并清理(V)', null, 'menu:save-clean'),
+      M('保存(S)', 'Ctrl+S', 'menu:save'),
+      M('另存为(A)', 'Shift+Ctrl+S', 'menu:save-as'),
       { type: 'separator' },
-      M('设置', null, 'menu:settings', { type: 'submenu', submenu: [M('首选项...', null, 'menu:preferences')] }),
-      M('树信息...', null, 'menu:tree-info'),
-      M('文档路径复制到剪贴板', null, 'menu:copy-path'),
+      M('页面设置(G)', null, 'menu:page-setup'),
+      M('打印(R)', 'Ctrl+P', 'menu:print'),
       { type: 'separator' },
-      { label: '退出', accelerator: 'Ctrl+Q', click: () => app.quit() }
+      { label: '设置(P)', submenu: [
+        M('首选项...', null, 'menu:preferences')
+      ]},
+      M('树信息(f)', null, 'menu:tree-info'),
+      M('文档路径复制到剪贴板(D)', null, 'menu:copy-path'),
+      { type: 'separator' },
+      { label: '退出(Q)', accelerator: 'Ctrl+Q', click: () => app.quit() }
     ]},
     /* ---------- 编辑 ---------- */
     { label: '编辑(E)', submenu: [
