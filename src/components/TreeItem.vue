@@ -1,7 +1,8 @@
 <template>
   <div class="tree-item">
     <div class="tree-item-label" :class="{ active: selectedId === node.id, 'drag-over': isDragOver }"
-      :style="{ paddingLeft: level * 18 + 8 + 'px' }" draggable="true"
+      :style="{ paddingLeft: level * 18 + 8 + 'px', background: node.color ? node.color : undefined }"
+      draggable="true"
       @click="$emit('select', node)" @dblclick="startRename" @contextmenu.prevent="showMenu"
       @dragstart="onDragStart" @dragover.prevent="onDragOver" @dragleave="isDragOver = false" @drop.prevent="onDrop" @dragend="isDragOver = false">
       <span class="expand-toggle" v-if="hasChildren" @click.stop="$emit('toggle', node.id)">{{ isExpanded ? '▼' : '▶' }}</span>
