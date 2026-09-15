@@ -1,226 +1,178 @@
 <template>
-  <div class="editor-area">
-    <!-- ============ CherryTree 式工具栏 ============ -->
-    <div class="editor-toolbar" v-if="editor && showToolbar">
-      <!-- 组1: 新建节点 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'tree_add_node')" title="新建同级节点 (Ctrl+N)">
-        <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6" fill="#e74c3c"/><rect x="7" y="16" width="10" height="5" rx="1" fill="#27ae60"/><text x="12" y="20" font-size="9" fill="#fff" text-anchor="middle" font-weight="bold">+</text></svg>
+  <div class="lt-editor-container">
+    <!-- ===== 工具栏 ===== -->
+    <div class="lt-toolbar">
+      <!-- 组1: 节点导航 -->
+      <button class="lt-tb-btn" title="添加节点" @click="$emit('editor-menu', 'tree_add_node')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 3h12v10H2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 7h6M5 9h4" stroke="currentColor" stroke-width="1"/><circle cx="12" cy="6" r="2.5" fill="#5b9bd5"/><path d="M12 4.5v3M10.5 6h3" stroke="#fff" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="添加子节点" @click="$emit('editor-menu', 'tree_add_subnode')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 3h8v3H2zM5 7h8v6H5z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="6" r="2.5" fill="#5b9bd5"/><path d="M12 4.5v3M10.5 6h3" stroke="#fff" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="上一个节点" @click="$emit('editor-menu', 'go_node_prev')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M10 4L5 8l5 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      <button class="lt-tb-btn" title="下一个节点" @click="$emit('editor-menu', 'go_node_next')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M6 4l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      <span class="lt-tb-sep"></span>
+
+      <!-- 组2: 文件操作 -->
+      <button class="lt-tb-btn" title="打开文件夹" @click="$emit('editor-menu', 'ct_open_folder')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M1 4h5l1 1h7v8H1z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <button class="lt-tb-btn" title="保存" @click="$emit('editor-menu', 'ct_save')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M3 2h8l2 2v10H3z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 2v4h5V2M5 9h6v4H5z" fill="none" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="导出PDF" @click="$emit('editor-menu', 'export_pdf')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M3 1h7l3 3v11H3z" fill="none" stroke="currentColor" stroke-width="1.2"/><text x="8" y="11" text-anchor="middle" font-size="5" fill="currentColor">PDF</text></svg></button>
+      <span class="lt-tb-sep"></span>
+
+      <!-- 组3: 搜索 -->
+      <button class="lt-tb-btn" title="在所有节点中查找" @click="$emit('editor-menu', 'find_in_allnodes')"><svg viewBox="0 0 16 16" width="16" height="16"><circle cx="7" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      <span class="lt-tb-sep"></span>
+
+      <!-- 组4: 列表缩进 -->
+      <button class="lt-tb-btn" title="项目符号列表" @click="$emit('editor-menu', 'handle_bull_list')"><svg viewBox="0 0 16 16" width="16" height="16"><circle cx="3" cy="4" r="1.2" fill="currentColor"/><circle cx="3" cy="8" r="1.2" fill="currentColor"/><circle cx="3" cy="12" r="1.2" fill="currentColor"/><path d="M6 4h8M6 8h8M6 12h8" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="编号列表" @click="$emit('editor-menu', 'handle_num_list')"><svg viewBox="0 0 16 16" width="16" height="16"><text x="1" y="5" font-size="4" fill="currentColor">1.</text><text x="1" y="9" font-size="4" fill="currentColor">2.</text><text x="1" y="13" font-size="4" fill="currentColor">3.</text><path d="M5 4h9M5 8h9M5 12h9" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="待办列表" @click="$emit('editor-menu', 'handle_todo_list')"><svg viewBox="0 0 16 16" width="16" height="16"><rect x="1" y="2" width="4" height="4" fill="none" stroke="currentColor" stroke-width="1"/><path d="M1.5 4L2.5 5L4 3" fill="none" stroke="currentColor" stroke-width="1"/><rect x="1" y="7" width="4" height="4" fill="none" stroke="currentColor" stroke-width="1"/><rect x="1" y="12" width="4" height="4" fill="none" stroke="currentColor" stroke-width="1"/><path d="M7 4h8M7 9h8M7 14h8" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="增加缩进" @click="$emit('editor-menu', 'fmt_indent')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M6 4l3 4-3 4M2 4h12" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <button class="lt-tb-btn" title="减少缩进" @click="$emit('editor-menu', 'fmt_unindent')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M9 4l-3 4 3 4M2 4h12" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <span class="lt-tb-sep"></span>
+
+      <!-- 组5: 插入元素 -->
+      <button class="lt-tb-btn" title="插入图片" @click="$emit('editor-menu', 'handle_image')"><svg viewBox="0 0 16 16" width="16" height="16"><rect x="1" y="2" width="14" height="12" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="5" cy="6" r="1.5" fill="currentColor"/><path d="M2 12l4-4 3 3 2-2 3 3" fill="none" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="插入表格" @click="$emit('editor-menu', 'handle_table')"><svg viewBox="0 0 16 16" width="16" height="16"><rect x="1" y="2" width="14" height="12" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M1 6h14M1 10h14M5 2v12M10 2v12" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="插入代码框" @click="$emit('editor-menu', 'handle_codebox')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M6 5L3 8l3 3M10 5l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="2" width="14" height="12" fill="none" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button class="lt-tb-btn" title="插入链接" @click="$emit('editor-menu', 'handle_link')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M6 10l4-4M5 7l-2 2a2 2 0 003 3l2-2M11 9l2-2a2 2 0 00-3-3l-2 2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <button class="lt-tb-btn" title="插入锚点" @click="$emit('editor-menu', 'handle_anchor')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 2v12M5 5h6M4 10a4 4 0 008 0" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <span class="lt-tb-sep"></span>
+
+      <!-- 组6: 格式化 -->
+      <button class="lt-tb-btn" title="克隆格式" @click="$emit('editor-menu', 'fmt_clone')"><svg viewBox="0 0 16 16" width="16" height="16"><rect x="2" y="2" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7 7h7v7H7z" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2,1"/></svg></button>
+      <button class="lt-tb-btn" title="应用最近格式" @click="$emit('editor-menu', 'fmt_latest')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M3 3v10M6 3v10M3 3h6" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      <button class="lt-tb-btn" title="清除格式" @click="$emit('editor-menu', 'fmt_rm')"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M4 4l8 8M4 12L12 4" stroke="currentColor" stroke-width="1.5"/></svg></button>
+
+      <button class="lt-tb-btn" title="文字颜色" @click.stop="toggleFgColorPanel">
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 2L5 12h2l1-3h2l1 3h2L8 2zm0 5l.5 2h-1L8 7z" fill="currentColor"/><rect x="2" y="13" width="12" height="2" fill="#e74c3c"/></svg>
       </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'tree_add_subnode')" title="新建子节点 (Ctrl+J)">
-        <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="7" r="5" fill="#e74c3c"/><line x1="12" y1="12" x2="12" y2="17" stroke="#999" stroke-width="1.5"/><circle cx="12" cy="19" r="4" fill="#e74c3c"/><rect x="8" y="21" width="8" height="3" rx="1" fill="#27ae60"/><text x="12" y="23" font-size="7" fill="#fff" text-anchor="middle" font-weight="bold">+</text></svg>
+      <button class="lt-tb-btn" title="背景色" @click.stop="toggleBgColorPanel">
+        <svg viewBox="0 0 16 16" width="16" height="16"><rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="4" y="4" width="8" height="8" fill="#f39c12"/><text x="8" y="11" text-anchor="middle" font-size="6" fill="currentColor">A</text></svg>
       </button>
-      <span class="tb-sep"></span>
-      <!-- 组2: 后退/前进导航 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:go-back')" title="后退">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2.5"><path d="M20 12H8M14 6l-6 6 6 6"/></svg>
-      </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:go-forward')" title="前进">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2.5"><path d="M4 12h12M10 6l6 6-6 6"/></svg>
-      </button>
-      <span class="tb-sep"></span>
-      <!-- 组3: 文件操作 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'ct_open_file')" title="打开笔记文件 (Ctrl+O)">
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M3 7l3-3h5l2 3h8v11H3V7z" fill="#f5a623" stroke="#d48800" stroke-width="1"/></svg>
-      </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'ct_save')" title="保存 (Ctrl+S)">
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3h14v18H5V3z M5 3v6h10V3 M8 13h8v6H8z" fill="#9b59b6" stroke="#7d4ea0" stroke-width="1"/></svg>
-      </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'export_pdf')" title="导出">
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6V2z" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/><path d="M10 14l-3 3 3 3M14 14l3 3-3 3" stroke="#fff" stroke-width="1.5" fill="none"/></svg>
-      </button>
-      <span class="tb-sep"></span>
-      <!-- 组4: 搜索 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'find_in_allnodes')" title="搜索 (Ctrl+Shift+F)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/><circle cx="11" cy="11" r="2" fill="#e74c3c"/></svg>
-      </button>
-      <span class="tb-sep"></span>
-      <!-- 组5: 列表与缩进 -->
-      <button class="tb-btn" :class="{active: editor.isActive('bulletList')}" @click="editor.chain().focus().toggleBulletList().run()" title="无序列表">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="4" cy="6" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="4" cy="18" r="2"/><rect x="9" y="4" width="13" height="4" rx="1"/><rect x="9" y="10" width="13" height="4" rx="1"/><rect x="9" y="16" width="13" height="4" rx="1"/></svg>
-      </button>
-      <button class="tb-btn" :class="{active: editor.isActive('orderedList')}" @click="editor.chain().focus().toggleOrderedList().run()" title="有序编号列表">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><text x="1" y="8" font-size="7" font-weight="bold">1.</text><text x="1" y="15" font-size="7" font-weight="bold">2.</text><text x="1" y="22" font-size="7" font-weight="bold">3.</text><rect x="8" y="4" width="14" height="3" rx="1"/><rect x="8" y="11" width="14" height="3" rx="1"/><rect x="8" y="18" width="14" height="3" rx="1"/></svg>
-      </button>
-      <button class="tb-btn" :class="{active: isTodoList}" @click="toggleTodoList" title="待办列表">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="6" height="6" rx="1"/><path d="M4 7l2 2 3-4" stroke="#27ae60"/><rect x="3" y="12" width="6" height="6" rx="1"/><line x1="12" y1="7" x2="22" y2="7"/><line x1="12" y1="15" x2="22" y2="15"/></svg>
-      </button>
-      <button class="tb-btn" @click="editor.chain().focus().sinkListItem('listItem').run()" title="增加缩进">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e44ad" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M8 9l3 3-3 3"/></svg>
-      </button>
-      <button class="tb-btn" @click="editor.chain().focus().liftListItem('listItem').run()" title="减少缩进">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e44ad" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M11 9l-3 3 3 3"/></svg>
-      </button>
-      <span class="tb-sep"></span>
-      <!-- 组6: 插入元素 -->
-      <button class="tb-btn" @click="insertImage" title="插入图片（可拖拽缩放）">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="8" cy="9" r="2"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
-      </button>
-      <button class="tb-btn" @click="insertTable" title="插入表格（可拖拽缩放列宽）">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-      </button>
-      <button class="tb-btn" @click="insertCodeBlock" title="插入代码框（可拖拽缩放）">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>
-      </button>
-      <button class="tb-btn" @click="toggleLink" title="插入超链接">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6"/><path d="M8 12l-3 3a4 4 0 0 0 6 6l3-3"/><path d="M16 12l3-3a4 4 0 0 0-6-6l-3 3"/></svg>
-      </button>
-      <button class="tb-btn" @click="stripLink" title="取消超链接">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 15l6-6"/><path d="M8 12l-3 3a4 4 0 0 0 5 5"/><path d="M16 12l3-3a4 4 0 0 0-5-5"/><line x1="3" y1="3" x2="21" y2="21" stroke="#e74c3c"/></svg>
-      </button>
-      <button class="tb-btn" @click="insertAnchor" title="插入锚点">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M12 7v13M5 12a7 7 0 0 0 14 0"/></svg>
-      </button>
-      <span class="tb-sep"></span>
-      <!-- 组7: 格式化 — 清除格式/颜色/高亮/粗斜下删 -->
-      <button class="tb-btn" @click="editor.chain().focus().unsetAllMarks().clearNodes().run()" title="清除格式">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="4" y="16" font-size="13" font-weight="bold">A</text><line x1="3" y1="20" x2="21" y2="4" stroke="#e74c3c"/></svg>
-      </button>
-      <!-- 字体颜色面板 -->
-      <div class="tb-color-wrap">
-        <button class="tb-btn" @click="showColorPicker = !showColorPicker" title="文字颜色 (Ctrl+Shift+T)">
-          <svg width="20" height="20" viewBox="0 0 24 24"><text x="5" y="16" font-size="14" font-weight="bold" :fill="currentColor">A</text><path d="M3 18h18v2H3z" fill="#e91e63"/></svg>
-        </button>
-        <div v-if="showColorPicker" class="tb-color-dd" @click.stop>
-          <div class="tb-color-grid">
-            <span v-for="c in colorPalette" :key="c" class="tb-color-sw" :style="{ background: c }" @click="applyTextColor(c)"></span>
-          </div>
-        </div>
-      </div>
-      <!-- 背景色面板 -->
-      <div class="tb-color-wrap">
-        <button class="tb-btn" @click="showBgPicker = !showBgPicker" title="文字背景色 (Ctrl+Shift+H)">
-          <svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" :fill="currentBgColor"/><text x="5" y="16" font-size="14" font-weight="bold" fill="#333">A</text></svg>
-        </button>
-        <div v-if="showBgPicker" class="tb-color-dd" @click.stop>
-          <div class="tb-color-grid">
-            <span v-for="c in bgPalette" :key="c" class="tb-color-sw" :style="{ background: c }" @click="applyBgColor(c)"></span>
-          </div>
-        </div>
-      </div>
-      <button class="tb-btn" :class="{active: editor.isActive('bold')}" @click="editor.chain().focus().toggleBold().run()" title="加粗 (Ctrl+B)"><b style="font-size:15px">A</b></button>
-      <button class="tb-btn" :class="{active: editor.isActive('italic')}" @click="editor.chain().focus().toggleItalic().run()" title="斜体 (Ctrl+I)"><i style="font-size:15px">A</i></button>
-      <button class="tb-btn" :class="{active: editor.isActive('underline')}" @click="editor.chain().focus().toggleUnderline().run()" title="下划线 (Ctrl+U)"><u style="font-size:15px">A</u></button>
-      <button class="tb-btn" :class="{active: editor.isActive('strike')}" @click="editor.chain().focus().toggleStrike().run()" title="删除线"><s style="font-size:15px">A</s></button>
-      <span class="tb-sep"></span>
-      <!-- 组8: 标题/代码/上标下标 -->
-      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:1})}" @click="editor.chain().focus().toggleHeading({level:1}).run()" title="标题1">h1</button>
-      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:2})}" @click="editor.chain().focus().toggleHeading({level:2}).run()" title="标题2">h2</button>
-      <button class="tb-btn tb-text" :class="{active: editor.isActive('heading', {level:3})}" @click="editor.chain().focus().toggleHeading({level:3}).run()" title="标题3">h3</button>
-      <button class="tb-btn tb-text" @click="editor.chain().focus().toggleStrike().run()" title="删除线(s)">s</button>
-      <button class="tb-btn tb-text" @click="toggleSuperscript" title="上标"><span style="font-size:11px;vertical-align:super">a</span><span style="font-size:8px;vertical-align:super">s</span></button>
-      <button class="tb-btn tb-text" @click="toggleSubscript" title="下标"><span style="font-size:11px;vertical-align:sub">a</span><span style="font-size:8px;vertical-align:sub">s</span></button>
-      <button class="tb-btn tb-text" :class="{active: editor.isActive('code')}" @click="editor.chain().focus().toggleCode().run()" title="等宽行内代码(ms)"><span style="font-family:monospace;font-size:12px">ms</span></button>
-      <span class="tb-sep"></span>
-      <!-- 组9: 字体与字号 -->
-      <select class="tb-select" @change="onFontFamilyChange($event)" title="字体">
-        <option value="">字体</option>
-        <option v-for="f in fontFamilies" :key="f" :value="f" :style="{ fontFamily: f }">{{ f }}</option>
+
+      <button class="lt-tb-btn" title="加粗" @click="$emit('editor-menu', 'fmt_bold')"><strong style="font-size:14px">B</strong></button>
+      <button class="lt-tb-btn lt-tb-italic" title="斜体" @click="$emit('editor-menu', 'fmt_italic')"><em style="font-size:14px">I</em></button>
+      <button class="lt-tb-btn" title="下划线" @click="$emit('editor-menu', 'fmt_underline')"><span style="text-decoration:underline;font-size:14px">U</span></button>
+      <button class="lt-tb-btn" title="删除线" @click="$emit('editor-menu', 'fmt_strikethrough')"><span style="text-decoration:line-through;font-size:14px">S</span></button>
+      <button class="lt-tb-btn" title="标题1" @click="$emit('editor-menu', 'fmt_h1')" style="font-size:11px;font-weight:bold">H1</button>
+      <button class="lt-tb-btn" title="标题2" @click="$emit('editor-menu', 'fmt_h2')" style="font-size:11px;font-weight:bold">H2</button>
+      <button class="lt-tb-btn" title="标题3" @click="$emit('editor-menu', 'fmt_h3')" style="font-size:11px;font-weight:bold">H3</button>
+      <button class="lt-tb-btn" title="小号字" @click="$emit('editor-menu', 'fmt_small')" style="font-size:10px">S</button>
+      <button class="lt-tb-btn" title="下标" @click="$emit('editor-menu', 'fmt_subscript')">X<sub style="font-size:8px">2</sub></button>
+      <button class="lt-tb-btn" title="上标" @click="$emit('editor-menu', 'fmt_superscript')">X<sup style="font-size:8px">2</sup></button>
+      <button class="lt-tb-btn" title="等宽字体" @click="$emit('editor-menu', 'fmt_monospace')" style="font-family:monospace;font-size:12px">M</button>
+      <span class="lt-tb-sep"></span>
+
+      <!-- 字体/字号下拉 -->
+      <select class="lt-tb-select" title="字体" @change="applyFontFamily($event.target.value)" v-model="selectedFont">
+        <option v-for="f in fontList" :key="f" :value="f" :style="{ fontFamily: f }">{{ f }}</option>
       </select>
-      <select class="tb-select" @change="onFontSizeChange($event)" title="字号">
-        <option value="">字号</option>
-        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-        <option value="14">14</option><option value="16">16</option><option value="18">18</option>
-        <option value="20">20</option><option value="24">24</option><option value="28">28</option><option value="32">32</option>
+      <select class="lt-tb-select lt-tb-fontsize" title="字号" @change="applyFontSize($event.target.value)" v-model="selectedSize">
+        <option v-for="s in sizeList" :key="s" :value="s">{{ s }}pt</option>
       </select>
-      <span class="tb-sep"></span>
-      <!-- 组10: 时间戳 -->
-      <button class="tb-btn" @click="insertTimestamp" title="插入时间戳 (Ctrl+;)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg>
-      </button>
+      <span class="lt-tb-sep"></span>
+
+      <!-- 段落缩进 -->
+      <button class="lt-tb-btn" title="段落增加缩进" @click="applyParagraphIndent(1)"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 4h12M2 8h12M2 12h12M6 3v10" stroke="currentColor" stroke-width="1"/><path d="M6 6l2 2-2 2" fill="currentColor"/></svg></button>
+      <button class="lt-tb-btn" title="段落减少缩进" @click="applyParagraphIndent(-1)"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 4h12M2 8h12M2 12h12M6 3v10" stroke="currentColor" stroke-width="1"/><path d="M8 6L6 8l2 2" fill="currentColor"/></svg></button>
+      <span class="lt-tb-sep"></span>
+
+      <!-- 时间戳 -->
+      <button class="lt-tb-btn" title="插入时间戳" @click="$emit('editor-menu', 'insert_timestamp')"><svg viewBox="0 0 16 16" width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2"/></svg></button>
     </div>
 
-    <!-- ============ 查找条 ============ -->
-    <div v-if="findBar" class="find-bar">
-      <input ref="findInput" v-model="findText" placeholder="查找..." @keyup.enter="findNext(false)" @keyup.esc="findBar = false" />
-      <input v-model="replaceText" placeholder="替换为..." @keyup.enter="doReplace" />
-      <button class="fb-btn" @click="findNext(false)" title="下一个 (F3)">下一个</button>
-      <button class="fb-btn" @click="findNext(true)" title="上一个 (Shift+F3)">上一个</button>
-      <button class="fb-btn" @click="doReplace" title="替换当前">替换</button>
-      <button class="fb-btn fb-close" @click="findBar = false">✕</button>
-    </div>
-
-    <!-- ============ 编辑区 ============ -->
-    <div class="editor-content" :class="{ nowrap: !wrapLine, 'show-ln': showLn, 'show-ws': showWs, 'show-le': showLe }" @contextmenu.prevent="showCtxMenu">
-      <editor-content :editor="editor" />
-    </div>
-
-    <!-- ============ CherryTree 式编辑区右键菜单 ============ -->
-    <div v-if="ctxMenuVisible" class="ctx-menu" :style="{ left: ctxX+'px', top: ctxY+'px' }" @click.stop @contextmenu.prevent>
-      <div class="ctx-item" @click.stop="doCut"><span class="ctx-icon">✂️</span>剪切<span class="ctx-key">Ctrl+X</span></div>
-      <div class="ctx-item" @click.stop="doCopy"><span class="ctx-icon">📋</span>复制<span class="ctx-key">Ctrl+C</span></div>
-      <div class="ctx-item" @click.stop="doPaste"><span class="ctx-icon">📄</span>粘贴<span class="ctx-key">Ctrl+V</span></div>
-      <div class="ctx-item" @click.stop="pastePlain"><span class="ctx-icon">🧾</span>粘贴为纯文本<span class="ctx-key">Ctrl+Alt+P</span></div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="insertTimestamp"><span class="ctx-icon">⏰</span>插入时间戳<span class="ctx-key">Ctrl+;</span></div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="insertImage"><span class="ctx-icon">🖼️</span>插入图片</div>
-      <div class="ctx-item" @click="insertTable"><span class="ctx-icon">📊</span>插入表格</div>
-      <div class="ctx-item" @click="insertCodeBlock"><span class="ctx-icon">📝</span>插入代码框</div>
-      <div class="ctx-item" @click="editor.chain().focus().setHorizontalRule().run()"><span class="ctx-icon">―</span>插入水平线</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="toggleLink"><span class="ctx-icon">🔗</span>插入/编辑链接</div>
-      <div class="ctx-item" @click="stripLink"><span class="ctx-icon">⛓️</span>剥离链接</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="editor.chain().focus().toggleBulletList().run()" :class="{active: editor.isActive('bulletList')}"><span class="ctx-icon">•</span>项目符号列表</div>
-      <div class="ctx-item" @click="editor.chain().focus().toggleOrderedList().run()" :class="{active: editor.isActive('orderedList')}"><span class="ctx-icon">1.</span>编号列表</div>
-      <div class="ctx-item" @click="toggleTodoList" :class="{active: isTodoList}"><span class="ctx-icon">☑</span>待办事项列表</div>
-      <div class="ctx-sep"></div>
-      <div class="ctx-item" @click="editor.chain().focus().undo().run()" :class="{disabled: !editor.can().undo()}"><span class="ctx-icon">↶</span>撤销</div>
-      <div class="ctx-item" @click="editor.chain().focus().redo().run()" :class="{disabled: !editor.can().redo()}"><span class="ctx-icon">↷</span>重做</div>
-    </div>
-
-    <!-- ============ 插入表格对话框 ============ -->
-    <div v-if="tableDlg" class="modal-overlay" @click.self="tableDlg = false">
-      <div class="modal-dialog">
-        <div class="modal-title">插入表格</div>
-        <div class="modal-body">
-          <div class="modal-field"><label>行数</label><input type="number" v-model.number="tRows" min="1" max="50" /></div>
-          <div class="modal-field"><label>列数</label><input type="number" v-model.number="tCols" min="1" max="20" /></div>
-          <div class="modal-field"><label><input type="checkbox" v-model="tHeader" /> 含表头行</label></div>
-        </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" @click="tableDlg = false">取消</button>
-          <button class="modal-btn modal-btn-ok" @click="confirmTable">确定</button>
-        </div>
+    <!-- 颜色面板 -->
+    <div v-if="showFgColorPanel" class="lt-color-panel" @click.stop>
+      <div class="lt-color-panel-title">文字颜色</div>
+      <div class="lt-color-grid">
+        <div v-for="c in fgColors" :key="c" class="lt-color-cell" :style="{ background: c }" @click.stop="applyFgColor(c)"></div>
       </div>
+      <button class="lt-color-reset" @click.stop="applyFgColor('')">清除颜色</button>
+    </div>
+    <div v-if="showBgColorPanel" class="lt-color-panel" @click.stop>
+      <div class="lt-color-panel-title">背景颜色</div>
+      <div class="lt-color-grid">
+        <div v-for="c in bgColors" :key="c" class="lt-color-cell" :style="{ background: c }" @click.stop="applyBgColor(c)"></div>
+      </div>
+      <button class="lt-color-reset" @click.stop="applyBgColor('')">清除背景</button>
     </div>
 
-    <!-- ============ 插入代码框对话框 ============ -->
-    <div v-if="codeDlg" class="modal-overlay" @click.self="codeDlg = false">
-      <div class="modal-dialog">
-        <div class="modal-title">插入代码框</div>
-        <div class="modal-body">
-          <div class="modal-field"><label>编程语言</label>
-            <select v-model="codeLang" class="modal-select">
-              <option value="">无（纯文本）</option>
-              <option value="text">文本</option><option value="bash">Bash</option><option value="c">C</option>
-              <option value="cpp">C++</option><option value="csharp">C#</option><option value="css">CSS</option>
-              <option value="go">Go</option><option value="html">HTML</option><option value="java">Java</option>
-              <option value="javascript">JavaScript</option><option value="json">JSON</option><option value="python">Python</option>
-              <option value="ruby">Ruby</option><option value="rust">Rust</option><option value="sql">SQL</option>
-              <option value="typescript">TypeScript</option><option value="xml">XML</option><option value="yaml">YAML</option>
+    <!-- 查找替换条 -->
+    <div v-if="showFindBar" class="lt-find-bar">
+      <input ref="findInput" v-model="findText" class="lt-find-input" placeholder="查找..." @keydown.enter="doFindNext" @keydown.escape="showFindBar=false" />
+      <button class="lt-find-btn" @click="doFindNext">下一个</button>
+      <button class="lt-find-btn" @click="doFindPrev">上一个</button>
+      <input v-model="replaceText" class="lt-find-input" placeholder="替换..." />
+      <button class="lt-find-btn" @click="doReplace">替换</button>
+      <button class="lt-find-btn" @click="doReplaceAll">全部替换</button>
+      <button class="lt-find-btn lt-find-close" @click="showFindBar=false">✕</button>
+    </div>
+
+    <!-- 编辑器 -->
+    <div class="lt-editor-area" @contextmenu.prevent="onEditorContextMenu">
+      <editor-content :editor="editor" class="lt-prose" />
+    </div>
+
+    <!-- 右键菜单 -->
+    <div v-if="showContextMenu" class="lt-context-menu" :style="{ left: ctxMenuX + 'px', top: ctxMenuY + 'px' }" @click.stop>
+      <div class="lt-ctx-item" @click.stop="doAction('cut_plain')">剪切</div>
+      <div class="lt-ctx-item" @click.stop="doAction('copy_plain')">复制</div>
+      <div class="lt-ctx-item" @click.stop="doAction('paste_plain')">粘贴</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="doAction('paste_plain')">粘贴纯文本</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="doAction('cut_row')">剪切行</div>
+      <div class="lt-ctx-item" @click.stop="doAction('copy_row')">复制行</div>
+      <div class="lt-ctx-item" @click.stop="doAction('dup_row')">重复行</div>
+      <div class="lt-ctx-item" @click.stop="doAction('del_row')">删除行</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="doAction('fmt_bold')">加粗</div>
+      <div class="lt-ctx-item" @click.stop="doAction('fmt_italic')">斜体</div>
+      <div class="lt-ctx-item" @click.stop="doAction('fmt_underline')">下划线</div>
+      <div class="lt-ctx-item" @click.stop="doAction('fmt_strikethrough')">删除线</div>
+      <div class="lt-ctx-sep"></div>
+      <div class="lt-ctx-item" @click.stop="doAction('handle_bull_list')">项目符号</div>
+      <div class="lt-ctx-item" @click.stop="doAction('handle_num_list')">编号列表</div>
+      <div class="lt-ctx-item" @click.stop="doAction('handle_todo_list')">待办列表</div>
+    </div>
+
+    <!-- 代码框插入对话框 -->
+    <div v-if="showCodeboxDialog" class="lt-modal-overlay" @click="showCodeboxDialog=false">
+      <div class="lt-modal" @click.stop>
+        <div class="lt-modal-title">插入代码框</div>
+        <div class="lt-modal-body">
+          <label>语言:
+            <select v-model="codeboxLang" class="lt-modal-select">
+              <option>text</option><option>javascript</option><option>python</option><option>java</option>
+              <option>c</option><option>cpp</option><option>csharp</option><option>go</option>
+              <option>rust</option><option>ruby</option><option>php</option><option>html</option>
+              <option>css</option><option>sql</option><option>json</option><option>bash</option>
+              <option>yaml</option><option>xml</option><option>markdown</option>
             </select>
-          </div>
-          <div class="modal-field"><label>初始高度</label><input type="number" v-model.number="codeHeight" min="80" max="2000" /></div>
-          <div class="modal-field"><label><input type="checkbox" v-model="codeLn" /> 显示行号</label></div>
+          </label>
+          <label>初始高度:
+            <input type="number" v-model.number="codeboxHeight" min="80" max="1000" class="lt-modal-input" />
+          </label>
+          <label class="lt-modal-check">
+            <input type="checkbox" v-model="codeboxLineNumbers" /> 显示行号
+          </label>
         </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" @click="codeDlg = false">取消</button>
-          <button class="modal-btn modal-btn-ok" @click="confirmCode">确定</button>
+        <div class="lt-modal-footer">
+          <button class="lt-modal-btn" @click="showCodeboxDialog=false">取消</button>
+          <button class="lt-modal-btn lt-modal-btn-primary" @click="confirmCodebox">确定</button>
         </div>
       </div>
     </div>
 
-    <!-- ============ 格式化表格对话框 ============ -->
-    <div v-if="fmtDlg" class="modal-overlay" @click.self="fmtDlg = false">
-      <div class="modal-dialog">
-        <div class="modal-title">格式化表格</div>
-        <div class="modal-body">
-          <div class="modal-field"><label>列宽(px)</label><input type="number" v-model.number="fmtColW" min="40" max="1000" /></div>
+    <!-- 表格插入对话框 -->
+    <div v-if="showTableDialog" class="lt-modal-overlay" @click="showTableDialog=false">
+      <div class="lt-modal" @click.stop>
+        <div class="lt-modal-title">插入表格</div>
+        <div class="lt-modal-body">
+          <label>行数: <input type="number" v-model.number="tableRows" min="1" max="50" class="lt-modal-input" /></label>
+          <label>列数: <input type="number" v-model.number="tableCols" min="1" max="20" class="lt-modal-input" /></label>
+          <label class="lt-modal-check"><input type="checkbox" v-model="tableHeader" /> 包含表头</label>
         </div>
-        <div class="modal-actions">
-          <button class="modal-btn modal-btn-cancel" @click="fmtDlg = false">取消</button>
-          <button class="modal-btn modal-btn-ok" @click="confirmFmtTable">确定</button>
+        <div class="lt-modal-footer">
+          <button class="lt-modal-btn" @click="showTableDialog=false">取消</button>
+          <button class="lt-modal-btn lt-modal-btn-primary" @click="confirmTable">确定</button>
         </div>
       </div>
     </div>
@@ -228,494 +180,594 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
+import Color from '@tiptap/extension-color'
+import TextStyle from '@tiptap/extension-text-style'
+import Highlight from '@tiptap/extension-highlight'
+import Link from '@tiptap/extension-link'
 import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
-import { Underline } from '@tiptap/extension-underline'
-import { Color } from '@tiptap/extension-color'
-import Highlight from '@tiptap/extension-highlight'
-import TextStyle from '@tiptap/extension-text-style'
-import Link from '@tiptap/extension-link'
 import { Markdown } from 'tiptap-markdown'
-
-/* TextStyle 扩展加 fontSize + fontFamily 属性 */
-const TextStyleWithFontSize = TextStyle.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      fontSize: {
-        default: null,
-        renderHTML: attrs => attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
-        parseHTML: el => el.style.fontSize || null
-      },
-      fontFamily: {
-        default: null,
-        renderHTML: attrs => {
-          const styles = []
-          if (attrs.fontSize) styles.push(`font-size: ${attrs.fontSize}`)
-          if (attrs.fontFamily) styles.push(`font-family: ${attrs.fontFamily}`)
-          return styles.length ? { style: styles.join('; ') } : {}
-        },
-        parseHTML: el => el.style.fontFamily || null
-      }
-    }
-  }
-})
 import { ResizableImage } from '../extensions/resizable-image.js'
 import { ResizableCodeBlock } from '../extensions/resizable-code-block.js'
 
 const props = defineProps({
-  node: Object,
-  showToolbar: { type: Boolean, default: true },
-  wrapLine: { type: Boolean, default: true },
-  showLn: { type: Boolean, default: false },
-  showWs: { type: Boolean, default: false },
-  showLe: { type: Boolean, default: false }
+  content: { type: String, default: '' },
 })
-const emit = defineEmits(['save', 'app-menu'])
+const emit = defineEmits(['editor-menu', 'save-content'])
 
-const ctxMenuVisible = ref(false); const ctxX = ref(0); const ctxY = ref(0)
-const tableDlg = ref(false); const tRows = ref(3); const tCols = ref(3); const tHeader = ref(true)
-const codeDlg = ref(false); const codeLang = ref(''); const codeHeight = ref(200); const codeLn = ref(false)
-const fmtDlg = ref(false); const fmtColW = ref(120)
-const findBar = ref(false); const findText = ref(''); const replaceText = ref('')
+// --- 字体/字号 ---
+const fontList = [
+  'Microsoft YaHei', 'SimSun', 'SimHei', 'KaiTi', 'FangSong', 'Microsoft YaHei UI',
+  'Arial', 'Times New Roman', 'Courier New', 'Georgia', 'Verdana', 'Tahoma',
+  'Trebuchet MS', 'Impact', 'Comic Sans MS', 'Palatino Linotype', 'Consolas',
+  'Lucida Console', 'Segoe UI',
+]
+const sizeList = [10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32]
+const selectedFont = ref('Microsoft YaHei')
+const selectedSize = ref(14)
+
+// --- 颜色面板 ---
+const fgColors = [
+  '#000000','#333333','#666666','#999999','#cccccc','#ffffff','#ff0000','#cc0000',
+  '#990000','#ff6600','#ff9900','#ffcc00','#ffff00','#99cc00','#33cc00','#009900',
+  '#006633','#00cccc','#0099cc','#0066ff','#0000ff','#000099','#330099','#660099',
+  '#9900cc','#cc00cc','#ff00ff','#cc66cc',
+]
+const bgColors = [
+  'transparent','#ffffff','#f5f5f5','#e8e8e8','#d0d0d0','#fff8dc','#ffefd5','#ffe4b5',
+  '#ffe4c4','#ffdab9','#ffc0cb','#ffb6c1','#ff9999','#ff6b6b','#ffcc00','#ffff00',
+  '#90ee90','#98fb98','#00fa9a','#87ceeb','#87cefa','#add8e6','#b0c4de','#dda0dd',
+]
+const showFgColorPanel = ref(false)
+const showBgColorPanel = ref(false)
+
+// --- 查找替换 ---
+const showFindBar = ref(false)
+const findText = ref('')
+const replaceText = ref('')
 const findInput = ref(null)
-const colorPalette = ['#000000', '#ffffff', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff',
-  '#808080', '#c0c0c0', '#ffcccc', '#ffe599', '#fff2cc', '#d9ead3', '#cfe2f3', '#d9d2e9',
-  '#333333', '#666666', '#999999', '#cc0000', '#e69100', '#bf9000', '#38761d', '#134f5c',
-  '#0b5394', '#741b47', '#3d85c6', '#6aa84f', '#e06666', '#f6b26b', '#ffd966', '#93c47d']
-const bgPalette = ['transparent', '#ffff00', '#ff9900', '#ffcccc', '#ffe599', '#fff2cc', '#d9ead3', '#cfe2f3',
-  '#d9d2e9', '#ffd9b3', '#f4cccc', '#fce5cd', '#d9ead3', '#c9daf8', '#d9d2e9', '#ead1dc',
-  '#fffacd', '#e6ffe6', '#e6f3ff', '#ffe6e6', '#f0e6ff', '#ffffe0', '#f5f5dc', '#ffffff']
-const fontFamilies = ['Microsoft YaHei', 'SimSun', 'KaiTi', 'SimHei', 'FangSong', 'Microsoft YaHei UI',
-  'Consolas', 'Courier New', 'Times New Roman', 'Arial', 'Calibri', 'Cambria', 'Georgia',
-  'Verdana', 'Tahoma', 'Trebuchet MS', 'Comic Sans MS', 'Segoe UI', 'Source Code Pro']
-const showColorPicker = ref(false); const showBgPicker = ref(false)
-const currentColor = ref('#333333'); const currentBgColor = ref('#fffacd')
 
+// --- 右键菜单 ---
+const showContextMenu = ref(false)
+const ctxMenuX = ref(0)
+const ctxMenuY = ref(0)
+
+// --- 对话框 ---
+const showCodeboxDialog = ref(false)
+const codeboxLang = ref('text')
+const codeboxHeight = ref(200)
+const codeboxLineNumbers = ref(false)
+const showTableDialog = ref(false)
+const tableRows = ref(3)
+const tableCols = ref(3)
+const tableHeader = ref(true)
+
+// --- TipTap 编辑器 ---
 const editor = useEditor({
-  content: props.node.content || '',
   extensions: [
     StarterKit.configure({ codeBlock: false }),
-    Underline, Color, TextStyleWithFontSize,
+    Underline,
+    Color,
+    TextStyle,
     Highlight,
     Link.configure({ openOnClick: false }),
-    Markdown.configure({ html: false, breaks: true, linkify: true }),
+    Table.configure({ resizable: true }),
+    TableRow,
+    TableCell,
+    TableHeader,
+    Markdown,
     ResizableImage,
     ResizableCodeBlock,
-    Table.configure({ resizable: true, HTMLAttributes: { style: 'border-collapse: collapse; table-layout: fixed; width: 100%;' } }),
-    TableRow, TableCell, TableHeader,
   ],
-  editorProps: { attributes: { style: 'min-height: 100%; padding-bottom: 40px;' } }
+  content: '',
+  editorProps: {
+    attributes: {
+      class: 'lt-prose-content',
+    },
+  },
+  onUpdate: () => {
+    emitSave()
+  },
 })
 
-/* ---------- 自动保存(Markdown) ---------- */
 let saveTimer = null
-watch(() => editor.value?.getHTML(), () => {
-  if (!editor.value) return
-  clearTimeout(saveTimer)
+function emitSave() {
+  if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
-    emit('save', { id: props.node.id, content: editor.value.storage.markdown.getMarkdown() })
-  }, 600)
-}, { deep: true })
+    if (editor.value) {
+      let md = ''
+      try { md = editor.value.storage.markdown.getMarkdown() } catch { md = editor.value.getHTML() }
+      emit('save-content', md)
+    }
+  }, 500)
+}
 
-watch(() => props.node.id, (nid, oid) => {
-  if (!editor.value || nid === oid) return
-  clearTimeout(saveTimer)
-  editor.value.commands.setContent(props.node.content || '', false)
-})
-/* 视图状态变化 → 强制重绘代码框行号 */
-watch(() => [props.showLn], () => {
+// --- 加载内容 ---
+watch(() => props.content, (val) => {
   if (!editor.value) return
-  const md = editor.value.storage.markdown.getMarkdown()
-  editor.value.commands.setContent(md, false)
-})
-
-/* ---------- CherryTree 工具栏按钮直接调 App 处理 ---------- */
-function exportPdf() { emit('app-menu', 'menu:exp-pdf') }
-
-/* ---------- 剪贴板 ---------- */
-function getSelText() { if (!editor.value) return ''; const { from, to, empty } = editor.value.state.selection; return empty ? '' : editor.value.state.doc.textBetween(from, to, ' ') }
-function doCut() {
-  try {
-    if (!editor.value) return
-    const { from, to, empty } = editor.value.state.selection
-    if (!empty) {
-      const text = editor.value.state.doc.textBetween(from, to, ' ')
-      window.api.clipboardWriteText(text)
-      editor.value.chain().focus().deleteSelection().run()
+  if (val !== undefined && val !== null) {
+    const current = (() => { try { return editor.value.storage.markdown.getMarkdown() } catch { return editor.value.getHTML() } })()
+    if (val !== current) {
+      try { editor.value.commands.setContent(val, false) } catch (e) { console.error('setContent error:', e) }
     }
-  } catch(e) { console.error('doCut error:', e) }
-  hideCtx()
-}
-function doCopy() {
-  try {
-    if (!editor.value) return
-    const { from, to, empty } = editor.value.state.selection
-    if (!empty) {
-      const text = editor.value.state.doc.textBetween(from, to, ' ')
-      window.api.clipboardWriteText(text)
-    }
-  } catch(e) { console.error('doCopy error:', e) }
-  hideCtx()
-}
-async function doPaste() {
-  try {
-    if (!editor.value) return
-    const t = await window.api.clipboardReadText()
-    if (t) editor.value.chain().focus().insertContent(t).run()
-  } catch(e) { console.error('doPaste error:', e) }
-  hideCtx()
-}
-async function pastePlain() {
-  const t = await window.api.clipboardReadText()
-  if (t) editor.value.chain().focus().insertContent(t).run()
-  hideCtx()
-}
-
-/* ---------- 插入功能 ---------- */
-async function insertImage() {
-  try {
-    const r = await window.api.selectImage()
-    if (!r) return
-    editor.value.chain().focus().setImage({ src: r.dataUrl, alt: r.name, title: r.name, width: null, height: null }).run()
-  } catch(e) { console.error('insertImage error:', e) }
-  hideCtx()
-}
-function insertTable() { tRows.value = 3; tCols.value = 3; tHeader.value = true; tableDlg.value = true; hideCtx() }
-function confirmTable() {
-  tableDlg.value = false
-  try {
-    editor.value.chain().focus().insertTable({ rows: Math.max(1, Math.min(50, tRows.value || 3)), cols: Math.max(1, Math.min(20, tCols.value || 3)), withHeaderRow: tHeader.value }).run()
-  } catch(e) { console.error('confirmTable error:', e) }
-}
-function insertCodeBlock() { codeDlg.value = true; hideCtx() }
-function confirmCode() {
-  codeDlg.value = false
-  try {
-    editor.value.chain().focus().toggleCodeBlock().run()
-    // 设置代码框属性
-    setTimeout(() => {
-      try {
-        const pos = editor.value.state.selection.$from
-        for (let d = pos.depth; d >= 1; d--) {
-          if (pos.node(d).type.name === 'codeBlock') {
-            editor.value.chain().focus().command(({ tr }) => {
-              tr.setNodeMarkup(pos.before(d), undefined, { language: codeLang.value || '', boxHeight: codeHeight.value || 200, showLn: codeLn.value })
-              return true
-            }).run()
-            break
-          }
-        }
-      } catch(e) { console.error('setCodeAttrs error:', e) }
-    }, 50)
-  } catch(e) { console.error('confirmCode error:', e) }
-  hideCtx()
-}
-function insertTimestamp() {
-  try {
-    const n = new Date()
-    const p = (x) => String(x).padStart(2, '0')
-    const ts = `${n.getFullYear()}/${p(n.getMonth() + 1)}/${p(n.getDate())} ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`
-    editor.value.chain().focus().insertContent(ts).run()
-  } catch(e) { console.error('timestamp error:', e) }
-  hideCtx()
-}
-
-/* ---------- 字号 ---------- */
-function setFontSize(px) { try { editor.value.chain().focus().setMark('textStyle', { fontSize: px + 'px' }).run() } catch(e) { console.error('setFontSize error:', e) } }
-function onFontSizeChange(e) { const v = e.target.value; if (v) { setFontSize(v); e.target.value = '' } }
-function onFontFamilyChange(e) { const v = e.target.value; if (v) { try { editor.value.chain().focus().setMark('textStyle', { fontFamily: v }).run() } catch(err) { console.error(err) }; e.target.value = '' } }
-
-/* ---------- 文本颜色 / 背景色 ---------- */
-let colorIdx = 0
-function pickTextColor() { try { editor.value.chain().focus().setColor(colorPalette[(colorIdx++ * 7) % 16]).run() } catch(e) { console.error(e) } }
-function pickBgColor() { try { editor.value.chain().focus().toggleHighlight({ color: bgPalette[(colorIdx++ * 5 + 1) % 24] }).run() } catch(e) { console.error(e) } }
-function toggleHighlight() { try { editor.value.chain().focus().toggleHighlight({ color: '#fffacd' }).run() } catch(e) { console.error(e) } }
-function applyTextColor(c) { try { currentColor.value = c; editor.value.chain().focus().setColor(c).run() } catch(e) { console.error(e) }; showColorPicker.value = false }
-function applyBgColor(c) { try { if (c === 'transparent') editor.value.chain().focus().unsetHighlight().run(); else editor.value.chain().focus().toggleHighlight({ color: c }).run() } catch(e) { console.error(e) }; currentBgColor.value = c; showBgPicker.value = false }
-
-/* ---------- 待办事项列表（CherryTree ☐/☑ 风格） ---------- */
-const isTodoList = computed(() => {
-  if (!editor.value) return false
-  const { $from } = editor.value.state.selection
-  return $from.parent.textContent.startsWith('☐') || $from.parent.textContent.startsWith('☑')
-})
-function toggleTodoList() {
-  try {
-    if (!editor.value.isActive('bulletList')) editor.value.chain().focus().toggleBulletList().run()
-    const { $from } = editor.value.state.selection
-    const text = $from.parent.textContent || ''
-    const start = $from.start()
-    if (text.startsWith('☐')) { editor.value.chain().focus().deleteRange({ from: start, to: start + 1 }).insertContentAt(start, '☑').run() }
-    else if (text.startsWith('☑')) { editor.value.chain().focus().deleteRange({ from: start, to: start + 1 }).insertContentAt(start, '☐').run() }
-    else { editor.value.chain().focus().insertContentAt(start, '☐ ').run() }
-  } catch(e) { console.error('toggleTodoList error:', e) }
-  hideCtx()
-}
-function toggleTodoState() { toggleTodoList() }
-
-/* ---------- 行操作（重复/删除/上移/下移行） ---------- */
-function topBlockPos(state) {
-  let pos = state.selection.$from
-  while (pos.depth > 1) pos = pos.blockAt() ? state.selection.$from : pos
-  const $f = state.selection.$from
-  for (let d = $f.depth; d >= 0; d--) { if ($f.node(d).type.name === 'doc') { const node = $f.node(d - 1) || $f.parent; return { node, offset: $f.before(d - 1) || 0 } } }
-  return null
-}
-function currentBlockRange() {
-  const state = editor.value.state
-  const $f = state.selection.$from
-  for (let d = $f.depth; d >= 1; d--) {
-    const parentIsDoc = $f.node(d - 1).type.name === 'doc'
-    if (parentIsDoc) return { from: $f.before(d), to: $f.after(d), node: $f.node(d) }
   }
-  return null
-}
-function dupLine() {
-  const r = currentBlockRange(); if (!r) return
-  const json = r.node.toJSON()
-  editor.value.chain().focus().insertContentAt(r.to, json).run()
-}
-function delLine() {
-  const r = currentBlockRange(); if (!r) return
-  const docLen = editor.value.state.doc.content.size
-  const from = Math.max(0, r.from), to = Math.min(docLen, r.to + (r.to < docLen ? 1 : 0))
-  editor.value.chain().focus().deleteRange({ from, to }).run()
-}
-function moveLine(dir) {
-  const state = editor.value.state
-  const r = currentBlockRange(); if (!r) return
-  const doc = state.doc
-  let found = -1
-  doc.forEach((n, i, off) => { if (off === r.from) found = i })
-  const j = dir < 0 ? found - 1 : found + 1
-  if (j < 0 || j >= doc.childCount) return
-  const targetOff = dir < 0 ? 0 : r.to + 1
-  editor.value.chain().focus().command(({ tr }) => {
-    const node = doc.child(found)
-    tr.delete(r.from, r.to + (r.to < doc.content.size ? 1 : 0))
-    tr.insert(dir < 0 ? doc.child(j).nodeSize && offsetOf(doc, j) : r.from, node.toJSON() ? node : node)
-    return true
-  }).run()
-}
-function offsetOf(doc, index) { let off = 0; for (let i = 0; i < index; i++) off += doc.child(i).nodeSize; return off }
+}, { immediate: true })
 
-/* ---------- 链接 ---------- */
-function toggleLink() {
+// --- 图片粘贴 ---
+window.__ltPasteImg = (dataUrl) => {
+  if (!editor.value) return
   try {
-    const url = prompt('请输入链接地址：', 'https://')
-    if (!url) return
-    editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-  } catch(e) { console.error('toggleLink error:', e) }
-  hideCtx()
-}
-function stripLink() { try { editor.value.chain().focus().extendMarkRange('link').unsetLink().run() } catch(e) { console.error(e) }; hideCtx() }
-
-/* ---------- 锚点 ---------- */
-function insertAnchor() {
-  try {
-    const name = prompt('请输入锚点名称：', 'anchor')
-    if (!name) return
-    editor.value.chain().focus().insertContent(`⚓ ${name}`).run()
-  } catch(e) { console.error('insertAnchor error:', e) }
-  hideCtx()
+    editor.value.chain().focus().setResizableImage({ src: dataUrl }).run()
+  } catch (e) { console.error('paste image error:', e) }
 }
 
-/* ---------- 上标/下标 ---------- */
-function toggleSuperscript() {
-  try {
-    const sel = editor.value.state.selection
-    if (sel.empty) return
-    const text = editor.value.state.doc.textBetween(sel.from, sel.to, '')
-    editor.value.chain().focus().deleteSelection().insertContent(`<sup>${text}</sup>`).run()
-  } catch(e) { console.error('superscript error:', e) }
-}
-function toggleSubscript() {
-  try {
-    const sel = editor.value.state.selection
-    if (sel.empty) return
-    const text = editor.value.state.doc.textBetween(sel.from, sel.to, '')
-    editor.value.chain().focus().deleteSelection().insertContent(`<sub>${text}</sub>`).run()
-  } catch(e) { console.error('subscript error:', e) }
+// --- 全局点击关闭 ---
+function onGlobalClick() {
+  showFgColorPanel.value = false
+  showBgColorPanel.value = false
+  showContextMenu.value = false
 }
 
-/* ---------- 查找/替换（window.find） ---------- */
-function openFind() { findBar.value = true; setTimeout(() => findInput.value?.focus(), 50); hideCtx() }
-function findNext(backwards) {
-  if (!findText.value) return
-  window.find(findText.value, false, backwards, true, false, false)
+// --- 颜色面板开关 ---
+function toggleFgColorPanel() {
+  showBgColorPanel.value = false
+  showFgColorPanel.value = !showFgColorPanel.value
+}
+function toggleBgColorPanel() {
+  showFgColorPanel.value = false
+  showBgColorPanel.value = !showBgColorPanel.value
+}
+
+// --- 编辑器右键菜单 ---
+function onEditorContextMenu(e) {
+  ctxMenuX.value = e.clientX
+  ctxMenuY.value = e.clientY
+  showContextMenu.value = true
+}
+
+// --- 字体/字号 ---
+function applyFontFamily(font) {
+  if (!editor.value) return
+  try { editor.value.chain().focus().setMark('textStyle', { fontFamily: font }).run() } catch (e) { console.error(e) }
+}
+function applyFontSize(size) {
+  if (!editor.value) return
+  try { editor.value.chain().focus().setMark('textStyle', { fontSize: size + 'pt' }).run() } catch (e) { console.error(e) }
+}
+
+// --- 段落缩进 ---
+function applyParagraphIndent(dir) {
+  if (!editor.value) return
+  try {
+    if (dir > 0) {
+      editor.value.chain().focus().sinkListItem('listItem').run()
+    } else {
+      editor.value.chain().focus().liftListItem('listItem').run()
+    }
+  } catch (e) {
+    // 回退方案：用 padding
+    try {
+      const sel = window.getSelection()
+      if (sel.rangeCount) {
+        document.execCommand('indent' )
+      }
+    } catch {}
+  }
+}
+
+// --- 颜色应用 ---
+function applyFgColor(color) {
+  if (!editor.value) return
+  try {
+    if (color) editor.value.chain().focus().setColor(color).run()
+    else editor.value.chain().focus().unsetColor().run()
+  } catch (e) { console.error(e) }
+  showFgColorPanel.value = false
+}
+function applyBgColor(color) {
+  if (!editor.value) return
+  try {
+    if (color && color !== 'transparent') editor.value.chain().focus().toggleHighlight({ color }).run()
+    else editor.value.chain().focus().unsetHighlight().run()
+  } catch (e) { console.error(e) }
+  showBgColorPanel.value = false
+}
+
+// --- 查找替换 ---
+function doFindNext() {
+  if (!editor.value || !findText.value) return
+  try {
+    const found = window.find(findText.value, false, false, true, false, false, false)
+    if (!found) {
+      // 回到开头
+      const el = editor.value.view.dom
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      range.collapse(true)
+      const sel = window.getSelection()
+      sel.removeAllRanges()
+      sel.addRange(range)
+      window.find(findText.value, false, false, true, false, false, false)
+    }
+  } catch (e) { console.error(e) }
+}
+function doFindPrev() {
+  if (!editor.value || !findText.value) return
+  try { window.find(findText.value, false, true, true, false, false, false) } catch (e) { console.error(e) }
 }
 function doReplace() {
-  if (!findText.value) return
-  const sel = window.getSelection().toString()
-  if (sel && sel.toLowerCase() === findText.value.toLowerCase()) {
-    editor.value.chain().focus().insertContent(replaceText.value).run()
-  }
-  setTimeout(() => findNext(false), 50)
-}
-
-/* ---------- 格式化表格 ---------- */
-function formatTable() {
-  if (!editor.value.isActive('table')) { fmtDlg.value = false; return }
-  fmtDlg.value = true
-}
-function confirmFmtTable() {
-  fmtDlg.value = false
-  const w = Math.max(40, Math.min(1000, fmtColW.value || 120))
-  const { state } = editor.value
-  state.doc.descendants((node, pos) => {
-    if (node.type.name === 'table') {
-      const cols = node.firstChild ? node.firstChild.childCount : 1
-      editor.value.chain().focus().command(({ tr }) => {
-        tr.setNodeMarkup(pos, undefined, { colWidth: Array(cols).fill(w) })
-        return true
-      }).run()
-      return false
-    }
-  })
-}
-
-/* ---------- 右键菜单 ---------- */
-function showCtxMenu(e) { ctxX.value = e.clientX; ctxY.value = e.clientY; ctxMenuVisible.value = true }
-function hideCtx() { ctxMenuVisible.value = false }
-
-/* ---------- 全局菜单事件分发 ---------- */
-function onEditorMenu(e) {
-  if (!editor.value) return
-  const a = e.detail.action
+  if (!editor.value || !findText.value) return
   try {
-  const ch = editor.value.chain().focus()
-  switch (a) {
-    /* 编辑 */
-    case 'act_undo': ch.undo().run(); break
-    case 'act_redo': ch.redo().run(); break
-    case 'cut_plain': doCut(); break
-    case 'copy_plain': doCopy(); break
-    case 'paste_plain': doPaste(); break
-    case 'dup_row': dupLine(); break
-    case 'del_row': delLine(); break
-    case 'mv_up_row': moveLine(-1); break
-    case 'mv_down_row': moveLine(1); break
-
-    /* 插入 */
-    case 'handle_image': insertImage(); break
-    case 'handle_table': insertTable(); break
-    case 'handle_codebox': insertCodeBlock(); break
-    case 'handle_link': toggleLink(); break
-    case 'handle_anchor': insertAnchor(); break
-    case 'handle_bull_list': ch.toggleBulletList().run(); break
-    case 'handle_num_list': ch.toggleOrderedList().run(); break
-    case 'handle_todo_list': toggleTodoList(); break
-    case 'insert_timestamp': insertTimestamp(); break
-    case 'insert_horiz_rule': ch.setHorizontalRule().run(); break
-    case 'insert_toc': ch.insertContent('目录\n').run(); break
-    case 'insert_special_char': { const c = prompt('输入特殊字符：'); if (c) ch.insertContent(c).run(); break }
-    case 'handle_embfile': { alert('插入文件功能即将推出'); break }
-
-    /* 格式化 */
-    case 'fmt_color_fg': showColorPicker.value = !showColorPicker.value; break
-    case 'fmt_color_bg': showBgPicker.value = !showBgPicker.value; break
-    case 'fmt_bold': ch.toggleBold().run(); break
-    case 'fmt_italic': ch.toggleItalic().run(); break
-    case 'fmt_underline': ch.toggleUnderline().run(); break
-    case 'fmt_strikethrough': ch.toggleStrike().run(); break
-    case 'fmt_monospace': ch.toggleCode().run(); break
-    case 'fmt_small': setFontSize(11); break
-    case 'fmt_subscript': toggleSubscript(); break
-    case 'fmt_superscript': toggleSuperscript(); break
-    case 'fmt_h1': ch.toggleHeading({level:1}).run(); break
-    case 'fmt_h2': ch.toggleHeading({level:2}).run(); break
-    case 'fmt_h3': ch.toggleHeading({level:3}).run(); break
-    case 'fmt_h4': ch.toggleHeading({level:4}).run(); break
-    case 'fmt_h5': ch.toggleHeading({level:5}).run(); break
-    case 'fmt_h6': ch.toggleHeading({level:6}).run(); break
-    case 'fmt_indent': ch.sinkListItem('listItem').run(); break
-    case 'fmt_unindent': ch.liftListItem('listItem').run(); break
-    case 'fmt_rm': ch.unsetAllMarks().clearNodes().run(); break
-    case 'fmt_clone': ch.unsetAllMarks().clearNodes().run(); break
-    case 'fmt_latest': ch.unsetAllMarks().clearNodes().run(); break
-    case 'case_down': { const s = getSelText(); if (s) ch.insertContent(s.toLowerCase()).run(); break }
-    case 'case_up': { const s = getSelText(); if (s) ch.insertContent(s.toUpperCase()).run(); break }
-    case 'case_tggl': { const s = getSelText(); if (s) ch.insertContent(s === s.toUpperCase() ? s.toLowerCase() : s.toUpperCase()).run(); break }
-    case 'fmt_justify_left': ch.unsetAllMarks().run(); break
-    case 'fmt_justify_center': ch.unsetAllMarks().run(); break
-    case 'fmt_justify_right': ch.unsetAllMarks().run(); break
-    case 'fmt_justify_fill': ch.unsetAllMarks().run(); break
-    case 'head_expand': break
-    case 'head_collapse': break
-
-    /* 搜索 */
-    case 'find_in_node': openFind(); break
-    case 'find_iter_fw': findNext(false); break
-    case 'find_iter_bw': findNext(true); break
-    case 'replace_in_node': openFind(); break
-    case 'replace_iter_fw': doReplace(); break
-
-    /* 工具 */
-    case 'spellcheck_toggle': alert('拼写检查功能暂未启用'); break
-    case 'exec_code_los': break
-    case 'exec_code_all': break
-    case 'strip_trail_spaces': { const md = editor.value.storage.markdown.getMarkdown(); ch.insertContent(md.replace(/[ \t]+$/gm, '')).run(); break }
-    case 'repl_tabs_spaces': { const md = editor.value.storage.markdown.getMarkdown(); ch.insertContent(md.replace(/\t/g, '    ')).run(); break }
-    case 'command_palette': break
-
-    /* 表格 */
-    case 'table_column_add': ch.addColumnAfter().run(); break
-    case 'table_column_delete': ch.deleteColumn().run(); break
-    case 'table_column_left': break
-    case 'table_column_right': break
-    case 'table_row_add': ch.addRowAfter().run(); break
-    case 'table_row_delete': ch.deleteRow().run(); break
-    case 'table_row_up': ch.deleteRow().run(); break
-    case 'table_row_down': ch.deleteRow().run(); break
-    case 'table_delete': ch.deleteTable().run(); break
-    case 'table_edit_properties': formatTable(); break
-
-    /* 代码框 */
-    case 'codebox_change_properties': insertCodeBlock(); break
-    case 'codebox_increase_width': break
-    case 'codebox_decrease_width': break
-    case 'codebox_increase_height': break
-    case 'codebox_decrease_height': break
-
-    default: console.log('Unhandled editor menu action:', a)
-  }
-  } catch(e) { console.error('onEditorMenu error for', a, ':', e) }
+    const sel = window.getSelection()
+    if (sel.toString() === findText.value) {
+      document.execCommand('insertText', false, replaceText.value)
+    }
+    doFindNext()
+  } catch (e) { console.error(e) }
+}
+function doReplaceAll() {
+  if (!editor.value || !findText.value) return
+  try {
+    let html = editor.value.getHTML()
+    // 只在文本节点中替换（简单实现）
+    const re = new RegExp(findText.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
+    html = html.replace(re, replaceText.value)
+    editor.value.chain().focus().setContent(html, false).run()
+  } catch (e) { console.error(e) }
 }
 
-onMounted(() => {
-  window.__ltPasteImg = (dataUrl) => {
-    if (!editor.value) return
-    editor.value.chain().focus().setImage({ src: dataUrl, alt: 'pasted-image', title: 'pasted-image', width: null, height: null }).run()
+// --- 右键菜单动作 ---
+function doAction(action) {
+  showContextMenu.value = false
+  onEditorMenu(action)
+}
+
+// --- 确认对话框 ---
+function confirmCodebox() {
+  if (!editor.value) return
+  try {
+    editor.value.chain().focus().insertResizableCodeBlock({
+      language: codeboxLang.value,
+      height: codeboxHeight.value,
+      showLineNumbers: codeboxLineNumbers.value,
+      code: '',
+    }).run()
+  } catch (e) { console.error('insert codebox error:', e) }
+  showCodeboxDialog.value = false
+}
+
+function confirmTable() {
+  if (!editor.value) return
+  try {
+    editor.value.chain().focus().insertTable({
+      rows: tableRows.value,
+      cols: tableCols.value,
+      withHeaderRow: tableHeader.value,
+    }).run()
+  } catch (e) { console.error('insert table error:', e) }
+  showTableDialog.value = false
+}
+
+// --- onEditorMenu: 处理所有编辑器相关 action ---
+function onEditorMenu(action) {
+  if (!editor.value) return
+  try {
+    switch (action) {
+      // --- 编辑 ---
+      case 'act_undo':
+        try { editor.value.chain().focus().undo().run() } catch {}
+        break
+      case 'act_redo':
+        try { editor.value.chain().focus().redo().run() } catch {}
+        break
+      case 'cut_plain':
+        try { document.execCommand('cut') } catch {}
+        break
+      case 'copy_plain':
+        try { document.execCommand('copy') } catch {}
+        break
+      case 'paste_plain':
+        try { navigator.clipboard.readText().then(t => editor.value.chain().focus().insertContent(t).run()) } catch {}
+        break
+
+      // --- 行操作 ---
+      case 'cut_row':
+        try { editor.value.chain().focus().selectParentNode().deleteSelection().run() } catch {}
+        break
+      case 'copy_row':
+        try { document.execCommand('copy') } catch {}
+        break
+      case 'dup_row':
+        try {
+          const sel = window.getSelection()
+          if (sel.rangeCount) {
+            const range = sel.getRangeAt(0)
+            const clone = range.cloneContents()
+            const div = document.createElement('div')
+            div.appendChild(clone)
+            editor.value.chain().focus().insertContent(div.innerHTML).run()
+          }
+        } catch {}
+        break
+      case 'del_row':
+        try { editor.value.chain().focus().selectParentNode().deleteSelection().run() } catch {}
+        break
+
+      // --- 表格 ---
+      case 'handle_table':
+        showTableDialog.value = true
+        break
+      case 'table_column_add':
+        try { editor.value.chain().focus().addColumnAfter().run() } catch {}
+        break
+      case 'table_column_delete':
+        try { editor.value.chain().focus().deleteColumn().run() } catch {}
+        break
+      case 'table_row_add':
+        try { editor.value.chain().focus().addRowAfter().run() } catch {}
+        break
+      case 'table_row_delete':
+        try { editor.value.chain().focus().deleteRow().run() } catch {}
+        break
+      case 'table_delete':
+        try { editor.value.chain().focus().deleteTable().run() } catch {}
+        break
+      case 'table_edit_properties':
+        // 切换表头
+        try { editor.value.chain().focus().toggleHeaderRow().run() } catch {}
+        break
+
+      // --- 代码框 ---
+      case 'handle_codebox':
+        showCodeboxDialog.value = true
+        break
+      case 'codebox_change_properties':
+        // 选中代码框后弹出对话框
+        showCodeboxDialog.value = true
+        break
+      case 'codebox_increase_width':
+        try { editor.value.chain().focus().updateAttributes('resizableCodeBlock', { height: (editor.value.getAttributes('resizableCodeBlock').height || 200) + 20 }).run() } catch {}
+        break
+      case 'codebox_decrease_width':
+        try { editor.value.chain().focus().updateAttributes('resizableCodeBlock', { height: Math.max(80, (editor.value.getAttributes('resizableCodeBlock').height || 200) - 20) }).run() } catch {}
+        break
+      case 'codebox_increase_height':
+        try { editor.value.chain().focus().updateAttributes('resizableCodeBlock', { height: (editor.value.getAttributes('resizableCodeBlock').height || 200) + 30 }).run() } catch {}
+        break
+      case 'codebox_decrease_height':
+        try { editor.value.chain().focus().updateAttributes('resizableCodeBlock', { height: Math.max(80, (editor.value.getAttributes('resizableCodeBlock').height || 200) - 30) }).run() } catch {}
+        break
+
+      // --- 插入 ---
+      case 'handle_image':
+        if (window.api && window.api.selectImage) {
+          window.api.selectImage().then((r) => {
+            if (r && r.dataUrl) {
+              try { editor.value.chain().focus().setResizableImage({ src: r.dataUrl, alt: r.name || '' }).run() } catch (e) { console.error(e) }
+            }
+          }).catch(() => {})
+        }
+        break
+      case 'handle_link':
+        try {
+          const url = prompt('输入链接 URL:')
+          if (url) editor.value.chain().focus().setLink({ href: url }).run()
+        } catch {}
+        break
+      case 'handle_anchor':
+        try {
+          const anchor = prompt('输入锚点名称:')
+          if (anchor) editor.value.chain().focus().setLink({ href: '#' + anchor }).run()
+        } catch {}
+        break
+      case 'insert_toc':
+        try { editor.value.chain().focus().insertContent('<p style="color:#999">[目录]</p>').run() } catch {}
+        break
+      case 'insert_timestamp':
+        try {
+          const ts = new Date().toLocaleString('zh-CN', { hour12: false })
+          editor.value.chain().focus().insertContent(ts).run()
+        } catch {}
+        break
+      case 'insert_special_char':
+        try {
+          const ch = prompt('输入特殊字符:')
+          if (ch) editor.value.chain().focus().insertContent(ch).run()
+        } catch {}
+        break
+      case 'insert_horiz_rule':
+        try { editor.value.chain().focus().setHorizontalRule().run() } catch {}
+        break
+      case 'handle_bull_list':
+        try { editor.value.chain().focus().toggleBulletList().run() } catch {}
+        break
+      case 'handle_num_list':
+        try { editor.value.chain().focus().toggleOrderedList().run() } catch {}
+        break
+      case 'handle_todo_list':
+        try { editor.value.chain().focus().toggleTaskList().run() } catch {}
+        break
+
+      // --- 格式化 ---
+      case 'fmt_clone':
+        // 克隆格式（简化版：复制当前 marks）
+        try {} catch {}
+        break
+      case 'fmt_latest':
+        try {} catch {}
+        break
+      case 'fmt_rm':
+        try { editor.value.chain().focus().unsetAllMarks().clearNodes().run() } catch {}
+        break
+      case 'fmt_color_fg':
+        showFgColorPanel.value = !showFgColorPanel.value
+        showBgColorPanel.value = false
+        break
+      case 'fmt_color_bg':
+        showBgColorPanel.value = !showBgColorPanel.value
+        showFgColorPanel.value = false
+        break
+      case 'fmt_bold':
+        try { editor.value.chain().focus().toggleBold().run() } catch {}
+        break
+      case 'fmt_italic':
+        try { editor.value.chain().focus().toggleItalic().run() } catch {}
+        break
+      case 'fmt_underline':
+        try { editor.value.chain().focus().toggleUnderline().run() } catch {}
+        break
+      case 'fmt_strikethrough':
+        try { editor.value.chain().focus().toggleStrike().run() } catch {}
+        break
+      case 'fmt_monospace':
+        try { editor.value.chain().focus().toggleCode().run() } catch {}
+        break
+      case 'fmt_small':
+        try { editor.value.chain().focus().setMark('textStyle', { fontSize: '10pt' }).run() } catch {}
+        break
+      case 'fmt_subscript':
+        try {
+          // 用 <sub> 标签实现
+          editor.value.chain().focus().insertContent('<sub>').run()
+        } catch {}
+        break
+      case 'fmt_superscript':
+        try {
+          // 用 <sup> 标签实现
+          editor.value.chain().focus().insertContent('<sup>').run()
+        } catch {}
+        break
+      case 'fmt_h1':
+        try { editor.value.chain().focus().toggleHeading({ level: 1 }).run() } catch {}
+        break
+      case 'fmt_h2':
+        try { editor.value.chain().focus().toggleHeading({ level: 2 }).run() } catch {}
+        break
+      case 'fmt_h3':
+        try { editor.value.chain().focus().toggleHeading({ level: 3 }).run() } catch {}
+        break
+      case 'fmt_h4':
+        try { editor.value.chain().focus().toggleHeading({ level: 4 }).run() } catch {}
+        break
+      case 'fmt_h5':
+        try { editor.value.chain().focus().toggleHeading({ level: 5 }).run() } catch {}
+        break
+      case 'fmt_h6':
+        try { editor.value.chain().focus().toggleHeading({ level: 6 }).run() } catch {}
+        break
+      case 'fmt_indent':
+        try { editor.value.chain().focus().sinkListItem('listItem').run() } catch { try { document.execCommand('indent') } catch {} }
+        break
+      case 'fmt_unindent':
+        try { editor.value.chain().focus().liftListItem('listItem').run() } catch { try { document.execCommand('outdent') } catch {} }
+        break
+      case 'fmt_justify_left':
+        try { editor.value.chain().focus().setTextAlign('left').run() } catch {}
+        break
+      case 'fmt_justify_center':
+        try { editor.value.chain().focus().setTextAlign('center').run() } catch {}
+        break
+      case 'fmt_justify_right':
+        try { editor.value.chain().focus().setTextAlign('right').run() } catch {}
+        break
+      case 'fmt_justify_fill':
+        try { editor.value.chain().focus().setTextAlign('justify').run() } catch {}
+        break
+
+      // --- 大小写 ---
+      case 'case_down':
+        try { replaceSelection(editor.value, (t) => t.toLowerCase()) } catch {}
+        break
+      case 'case_up':
+        try { replaceSelection(editor.value, (t) => t.toUpperCase()) } catch {}
+        break
+      case 'case_tggl':
+        try { replaceSelection(editor.value, (t) => t === t.toUpperCase() ? t.toLowerCase() : t.toUpperCase()) } catch {}
+        break
+
+      // --- 查找替换 ---
+      case 'find_in_node':
+        showFindBar.value = true
+        nextTick(() => { if (findInput.value) findInput.value.focus() })
+        break
+      case 'find_iter_fw':
+        doFindNext()
+        break
+      case 'find_iter_bw':
+        doFindPrev()
+        break
+      case 'replace_in_node':
+        showFindBar.value = true
+        nextTick(() => { if (findInput.value) findInput.value.focus() })
+        break
+      case 'replace_iter_fw':
+        doReplace()
+        break
+
+      // --- 展开/折叠 ---
+      case 'head_expand':
+        try { editor.value.chain().focus().setHeading({ level: 1 }).run() } catch {}
+        break
+      case 'head_collapse':
+        try { editor.value.chain().focus().setParagraph().run() } catch {}
+        break
+
+      // --- 工具 ---
+      case 'strip_trail_spaces':
+        try {
+          let html = editor.value.getHTML()
+          html = html.replace(/\s+<(\/?)/g, '<$1')
+          editor.value.chain().focus().setContent(html, false).run()
+        } catch {}
+        break
+      case 'repl_tabs_spaces':
+        try {
+          let html = editor.value.getHTML()
+          html = html.replace(/\t/g, '  ')
+          editor.value.chain().focus().setContent(html, false).run()
+        } catch {}
+        break
+
+      default:
+        // 未处理的 action 静默忽略
+        break
+    }
+  } catch (err) {
+    console.error('onEditorMenu error:', action, err)
   }
-  window.addEventListener('editor-menu', onEditorMenu)
-  window.addEventListener('click', () => { hideCtx(); showColorPicker.value = false; showBgPicker.value = false })
-  /* 点击 ☐/☑ 切换待办状态 */
-  document.addEventListener('mousedown', onTodoClick)
+}
+
+// --- 辅助：替换选中文本 ---
+function replaceSelection(ed, fn) {
+  const sel = window.getSelection()
+  if (!sel || !sel.rangeCount) return
+  const text = sel.toString()
+  if (!text) return
+  document.execCommand('insertText', false, fn(text))
+}
+
+// --- 导出函数给父组件 ---
+defineExpose({
+  onEditorMenu,
+  editor,
 })
-function onTodoClick(ev) {
-  if (!editor.value) return
-  try {
-    const pos = editor.value.view.posAtCoords({ left: ev.clientX, top: ev.clientY })
-    if (!pos) return
-    const $pos = editor.value.state.doc.resolve(pos.pos)
-    const text = $pos.parent.textContent || ''
-    if ((text.startsWith('☐') || text.startsWith('☑')) && pos.pos <= $pos.start() + 2) {
-      setTimeout(() => toggleTodoList(), 0)
-    }
-  } catch {}
-}
-onUnmounted(() => {
-  clearTimeout(saveTimer)
-  editor.value?.destroy()
-  delete window.__ltPasteImg
-  window.removeEventListener('editor-menu', onEditorMenu)
-  window.removeEventListener('click', hideCtx)
-  document.removeEventListener('mousedown', onTodoClick)
+
+// --- 生命周期 ---
+onMounted(() => {
+  document.addEventListener('click', onGlobalClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onGlobalClick)
+  if (saveTimer) clearTimeout(saveTimer)
+  if (editor.value) {
+    try { editor.value.destroy() } catch {}
+  }
 })
 </script>
