@@ -83,6 +83,10 @@ html, body, #app { height: 100%; overflow: hidden; font-family: -apple-system, B
 .tb-btn.tb-text { font-size: 13px; font-weight: 600; padding: 0 5px; }
 .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 
+/* Font select dropdown */
+.tb-select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; background: var(--bg-main); color: var(--text-primary); outline: none; cursor: pointer; height: 28px; max-width: 130px; flex-shrink: 0; }
+.tb-select:hover { border-color: var(--accent); }
+
 /* Color picker */
 .tb-color-wrap { position: relative; display: inline-flex; }
 .tb-color-dd { position: absolute; top: 32px; left: 0; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 6px; z-index: 100; }
