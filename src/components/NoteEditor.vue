@@ -3,10 +3,10 @@
     <!-- ============ CherryTree 式工具栏 ============ -->
     <div class="editor-toolbar" v-if="editor && showToolbar">
       <!-- 组1: 新建节点 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:add-node')" title="新建同级节点 (Ctrl+N)">
+      <button class="tb-btn" @click="$emit('app-menu', 'tree_add_node')" title="新建同级节点 (Ctrl+N)">
         <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6" fill="#e74c3c"/><rect x="7" y="16" width="10" height="5" rx="1" fill="#27ae60"/><text x="12" y="20" font-size="9" fill="#fff" text-anchor="middle" font-weight="bold">+</text></svg>
       </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:add-child')" title="新建子节点 (Ctrl+J)">
+      <button class="tb-btn" @click="$emit('app-menu', 'tree_add_subnode')" title="新建子节点 (Ctrl+J)">
         <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="7" r="5" fill="#e74c3c"/><line x1="12" y1="12" x2="12" y2="17" stroke="#999" stroke-width="1.5"/><circle cx="12" cy="19" r="4" fill="#e74c3c"/><rect x="8" y="21" width="8" height="3" rx="1" fill="#27ae60"/><text x="12" y="23" font-size="7" fill="#fff" text-anchor="middle" font-weight="bold">+</text></svg>
       </button>
       <span class="tb-sep"></span>
@@ -19,18 +19,18 @@
       </button>
       <span class="tb-sep"></span>
       <!-- 组3: 文件操作 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:open')" title="打开笔记文件 (Ctrl+O)">
+      <button class="tb-btn" @click="$emit('app-menu', 'ct_open_file')" title="打开笔记文件 (Ctrl+O)">
         <svg width="20" height="20" viewBox="0 0 24 24"><path d="M3 7l3-3h5l2 3h8v11H3V7z" fill="#f5a623" stroke="#d48800" stroke-width="1"/></svg>
       </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:save')" title="保存 (Ctrl+S)">
+      <button class="tb-btn" @click="$emit('app-menu', 'ct_save')" title="保存 (Ctrl+S)">
         <svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3h14v18H5V3z M5 3v6h10V3 M8 13h8v6H8z" fill="#9b59b6" stroke="#7d4ea0" stroke-width="1"/></svg>
       </button>
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:exp-pdf')" title="导出">
+      <button class="tb-btn" @click="$emit('app-menu', 'export_pdf')" title="导出">
         <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6V2z" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/><path d="M10 14l-3 3 3 3M14 14l3 3-3 3" stroke="#fff" stroke-width="1.5" fill="none"/></svg>
       </button>
       <span class="tb-sep"></span>
       <!-- 组4: 搜索 -->
-      <button class="tb-btn" @click="$emit('app-menu', 'menu:find-all')" title="搜索 (Ctrl+Shift+F)">
+      <button class="tb-btn" @click="$emit('app-menu', 'find_in_allnodes')" title="搜索 (Ctrl+Shift+F)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/><circle cx="11" cy="11" r="2" fill="#e74c3c"/></svg>
       </button>
       <span class="tb-sep"></span>
@@ -591,50 +591,99 @@ function onEditorMenu(e) {
   try {
   const ch = editor.value.chain().focus()
   switch (a) {
-    case 'menu:undo': ch.undo().run(); break
-    case 'menu:redo': ch.redo().run(); break
-    case 'menu:cut': doCut(); break
-    case 'menu:copy': doCopy(); break
-    case 'menu:paste': doPaste(); break
-    case 'menu:paste-plain': pastePlain(); break
-    case 'menu:paste-rich': doPaste(); break
-    case 'menu:dup-line': dupLine(); break
-    case 'menu:del-line': delLine(); break
-    case 'menu:line-up': moveLine(-1); break
-    case 'menu:line-down': moveLine(1); break
-    case 'menu:format-table': formatTable(); break
-    case 'menu:find': openFind(); break
-    case 'menu:find-next': findNext(false); break
-    case 'menu:find-prev': findNext(true); break
-    case 'menu:find-selected': { const t = getSelText(); if (t) { findText.value = t; openFind(); findNext(false) } break }
-    case 'menu:text-color': pickTextColor(); break
-    case 'menu:bg-color': pickBgColor(); break
-    case 'menu:bold': ch.toggleBold().run(); break
-    case 'menu:italic': ch.toggleItalic().run(); break
-    case 'menu:underline': ch.toggleUnderline().run(); break
-    case 'menu:strike': ch.toggleStrike().run(); break
-    case 'menu:small': setFontSize(11); break
-    case 'menu:normal': setFontSize(14); break
-    case 'menu:large': setFontSize(18); break
-    case 'menu:huge': setFontSize(26); break
-    case 'menu:n-list': ch.toggleOrderedList().run(); break
-    case 'menu:b-list': ch.toggleBulletList().run(); break
-    case 'menu:todo-list': toggleTodoList(); break
-    case 'menu:list-dec': ch.liftListItem('listItem').run(); break
-    case 'menu:list-inc': ch.sinkListItem('listItem').run(); break
-    case 'menu:timestamp': insertTimestamp(); break
-    case 'menu:remove-format': ch.unsetAllMarks().clearNodes().run(); break
-    case 'menu:insert-image': insertImage(); break
-    case 'menu:insert-table': insertTable(); break
-    case 'menu:insert-code': insertCodeBlock(); break
-    case 'menu:insert-hr': ch.setHorizontalRule().run(); break
-    case 'menu:insert-link': toggleLink(); break
-    case 'menu:insert-anchor': insertAnchor(); break
-    case 'menu:replace': openFind(); break
-    case 'menu:find-all': openFind(); break
-    case 'menu:paste-plain': pastePlain(); break
-    case 'menu:paste-rich': doPaste(); break
-    default: console.log('Unhandled editor menu:', a)
+    /* 编辑 */
+    case 'act_undo': ch.undo().run(); break
+    case 'act_redo': ch.redo().run(); break
+    case 'cut_plain': doCut(); break
+    case 'copy_plain': doCopy(); break
+    case 'paste_plain': doPaste(); break
+    case 'dup_row': dupLine(); break
+    case 'del_row': delLine(); break
+    case 'mv_up_row': moveLine(-1); break
+    case 'mv_down_row': moveLine(1); break
+
+    /* 插入 */
+    case 'handle_image': insertImage(); break
+    case 'handle_table': insertTable(); break
+    case 'handle_codebox': insertCodeBlock(); break
+    case 'handle_link': toggleLink(); break
+    case 'handle_anchor': insertAnchor(); break
+    case 'handle_bull_list': ch.toggleBulletList().run(); break
+    case 'handle_num_list': ch.toggleOrderedList().run(); break
+    case 'handle_todo_list': toggleTodoList(); break
+    case 'insert_timestamp': insertTimestamp(); break
+    case 'insert_horiz_rule': ch.setHorizontalRule().run(); break
+    case 'insert_toc': ch.insertContent('目录\n').run(); break
+    case 'insert_special_char': { const c = prompt('输入特殊字符：'); if (c) ch.insertContent(c).run(); break }
+    case 'handle_embfile': { alert('插入文件功能即将推出'); break }
+
+    /* 格式化 */
+    case 'fmt_color_fg': showColorPicker.value = !showColorPicker.value; break
+    case 'fmt_color_bg': showBgPicker.value = !showBgPicker.value; break
+    case 'fmt_bold': ch.toggleBold().run(); break
+    case 'fmt_italic': ch.toggleItalic().run(); break
+    case 'fmt_underline': ch.toggleUnderline().run(); break
+    case 'fmt_strikethrough': ch.toggleStrike().run(); break
+    case 'fmt_monospace': ch.toggleCode().run(); break
+    case 'fmt_small': setFontSize(11); break
+    case 'fmt_subscript': toggleSubscript(); break
+    case 'fmt_superscript': toggleSuperscript(); break
+    case 'fmt_h1': ch.toggleHeading({level:1}).run(); break
+    case 'fmt_h2': ch.toggleHeading({level:2}).run(); break
+    case 'fmt_h3': ch.toggleHeading({level:3}).run(); break
+    case 'fmt_h4': ch.toggleHeading({level:4}).run(); break
+    case 'fmt_h5': ch.toggleHeading({level:5}).run(); break
+    case 'fmt_h6': ch.toggleHeading({level:6}).run(); break
+    case 'fmt_indent': ch.sinkListItem('listItem').run(); break
+    case 'fmt_unindent': ch.liftListItem('listItem').run(); break
+    case 'fmt_rm': ch.unsetAllMarks().clearNodes().run(); break
+    case 'fmt_clone': ch.unsetAllMarks().clearNodes().run(); break
+    case 'fmt_latest': ch.unsetAllMarks().clearNodes().run(); break
+    case 'case_down': { const s = getSelText(); if (s) ch.insertContent(s.toLowerCase()).run(); break }
+    case 'case_up': { const s = getSelText(); if (s) ch.insertContent(s.toUpperCase()).run(); break }
+    case 'case_tggl': { const s = getSelText(); if (s) ch.insertContent(s === s.toUpperCase() ? s.toLowerCase() : s.toUpperCase()).run(); break }
+    case 'fmt_justify_left': ch.unsetAllMarks().run(); break
+    case 'fmt_justify_center': ch.unsetAllMarks().run(); break
+    case 'fmt_justify_right': ch.unsetAllMarks().run(); break
+    case 'fmt_justify_fill': ch.unsetAllMarks().run(); break
+    case 'head_expand': break
+    case 'head_collapse': break
+
+    /* 搜索 */
+    case 'find_in_node': openFind(); break
+    case 'find_iter_fw': findNext(false); break
+    case 'find_iter_bw': findNext(true); break
+    case 'replace_in_node': openFind(); break
+    case 'replace_iter_fw': doReplace(); break
+
+    /* 工具 */
+    case 'spellcheck_toggle': alert('拼写检查功能暂未启用'); break
+    case 'exec_code_los': break
+    case 'exec_code_all': break
+    case 'strip_trail_spaces': { const md = editor.value.storage.markdown.getMarkdown(); ch.insertContent(md.replace(/[ \t]+$/gm, '')).run(); break }
+    case 'repl_tabs_spaces': { const md = editor.value.storage.markdown.getMarkdown(); ch.insertContent(md.replace(/\t/g, '    ')).run(); break }
+    case 'command_palette': break
+
+    /* 表格 */
+    case 'table_column_add': ch.addColumnAfter().run(); break
+    case 'table_column_delete': ch.deleteColumn().run(); break
+    case 'table_column_left': break
+    case 'table_column_right': break
+    case 'table_row_add': ch.addRowAfter().run(); break
+    case 'table_row_delete': ch.deleteRow().run(); break
+    case 'table_row_up': ch.deleteRow().run(); break
+    case 'table_row_down': ch.deleteRow().run(); break
+    case 'table_delete': ch.deleteTable().run(); break
+    case 'table_edit_properties': formatTable(); break
+
+    /* 代码框 */
+    case 'codebox_change_properties': insertCodeBlock(); break
+    case 'codebox_increase_width': break
+    case 'codebox_decrease_width': break
+    case 'codebox_increase_height': break
+    case 'codebox_decrease_height': break
+
+    default: console.log('Unhandled editor menu action:', a)
   }
   } catch(e) { console.error('onEditorMenu error for', a, ':', e) }
 }
