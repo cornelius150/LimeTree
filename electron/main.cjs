@@ -455,7 +455,7 @@ ipcMain.handle('clipboard:write-text', (e, t) => clipboard.writeText(t))
 
 /* ================= Menu (与 CherryTree 一致) ================= */
 function M(label, accel, ch, extra) {
-  const it = { label, click: () => mainWindow.webContents.send(ch) }
+  const it = { label, click: () => mainWindow.webContents.send('menu-action', ch) }
   if (accel) it.accelerator = accel
   return Object.assign(it, extra || {})
 }
