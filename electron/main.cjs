@@ -108,9 +108,9 @@ async function initDB() {
   const cnt = dbGet('SELECT COUNT(*) as c FROM nodes')
   if (!cnt || cnt.c === 0) {
     const now = new Date().toLocaleString('zh-CN', { hour12: false })
-    dbRun("INSERT INTO nodes (parent_id,name,icon,color,content,created_at) VALUES (NULL,'我的笔记本','📔','','# 我的笔记本\n\n> 创建时间: ' || ?)", [now])
+    dbRun("INSERT INTO nodes (parent_id,name,icon,color,content,created_at) VALUES (NULL,'我的笔记本','📔','','# 我的笔记本\n\n> 创建时间: ' || ?, ?)", [now, now])
     const rid = dbLastId()
-    dbRun("INSERT INTO nodes (parent_id,name,icon,color,content,created_at) VALUES (?, '欢迎使用 LimeTree','📄','', '# 欢迎使用 LimeTree\n\n## 与 CherryTree 一致的菜单\n\n- 文件 / 编辑 / 搜索 / 视图 / 导入导出 / 书签 / 格式 / 树 / 帮助\n- 插入时间戳 Ctrl+;\n- 待办事项列表\n- 小/中/大/特大号字\n\n## 特色\n\n- 图片/表格/代码框可鼠标拖拽缩放\n- 节点显示创建时间戳\n- 笔记保存为 .md 文件\n\n> 创建时间: ' || ?)", [rid, now])
+    dbRun("INSERT INTO nodes (parent_id,name,icon,color,content,created_at) VALUES (?, '欢迎使用 LimeTree','📄','', '# 欢迎使用 LimeTree\n\n## 与 CherryTree 一致的菜单\n\n- 文件 / 编辑 / 搜索 / 视图 / 导入导出 / 书签 / 格式 / 树 / 帮助\n- 插入时间戳 Ctrl+;\n- 待办事项列表\n- 小/中/大/特大号字\n\n## 特色\n\n- 图片/表格/代码框可鼠标拖拽缩放\n- 节点显示创建时间戳\n- 笔记保存为 .md 文件\n\n> 创建时间: ' || ?, ?)", [rid, now, now])
     needSave = true; saveDocFile()
   }
   setInterval(saveDocFile, 5000)
@@ -128,7 +128,7 @@ ipcMain.handle('db:create-node', (e, { parentId, name, icon }) => {
     : dbGet("SELECT COALESCE(MAX(sort_order),-1) as m FROM nodes WHERE parent_id IS NULL")
   so = m.m + 1
   const now = new Date().toLocaleString('zh-CN', { hour12: false })
-  dbRun('INSERT INTO nodes (parent_id,name,icon,content,created_at) VALUES (?,?,?,?,?)', [parentId || null, name || '新建节点', icon || '📄', '', now])
+  dbRun('INSERT INTO nodes (parent_id,name,icon,color,content,created_at) VALUES (?,?,?,?,?,?)', [parentId || null, name || '新建节点', icon || '📄', '', '', now])
   const nid = dbLastId()
   if (parentId) dbRun('UPDATE nodes SET is_expanded=1 WHERE id=?', [parentId])
   saveDocFile()
@@ -344,8 +344,8 @@ ipcMain.handle('imp:txt', async () => {
   if (r.canceled || !r.filePaths.length) return null
   const fp = r.filePaths[0]
   const now = new Date().toLocaleString('zh-CN', { hour12: false })
-  dbRun('INSERT INTO nodes (parent_id,name,icon,content,created_at,sort_order) VALUES (NULL,?,?,?,?,' + nextRootOrder() + ')',
-    [path.basename(fp, path.extname(fp)), '📄', fs.readFileSync(fp, 'utf-8'), now])
+  dbRun('INSERT INTO nodes (parent_id,name,icon,color,content,created_at,sort_order) VALUES (NULL,?,?,?,?,?,' + nextRootOrder() + ')',
+    [path.basename(fp, path.extname(fp)), '📄', '', fs.readFileSync(fp, 'utf-8'), now])
   saveDocFile(); mainWindow.webContents.send('doc:reloaded')
   return { id: dbLastId() }
 })
@@ -355,8 +355,8 @@ ipcMain.handle('imp:txt-folder', async () => {
   let count = 0; const now = new Date().toLocaleString('zh-CN', { hour12: false })
   for (const f of fs.readdirSync(r.filePaths[0])) {
     if (!/\.(txt|md)$/i.test(f)) continue
-    dbRun('INSERT INTO nodes (parent_id,name,icon,content,created_at,sort_order) VALUES (NULL,?,?,?,?,' + nextRootOrder() + ')',
-      [f.replace(/\.(txt|md)$/i, ''), '📄', fs.readFileSync(path.join(r.filePaths[0], f), 'utf-8'), now])
+    dbRun('INSERT INTO nodes (parent_id,name,icon,color,content,created_at,sort_order) VALUES (NULL,?,?,?,?,?,' + nextRootOrder() + ')',
+      [f.replace(/\.(txt|md)$/i, ''), '📄', '', fs.readFileSync(path.join(r.filePaths[0], f), 'utf-8'), now])
     count++
   }
   saveDocFile(); mainWindow.webContents.send('doc:reloaded')
@@ -367,8 +367,8 @@ ipcMain.handle('imp:html', async () => {
   if (r.canceled || !r.filePaths.length) return null
   const fp = r.filePaths[0]
   const now = new Date().toLocaleString('zh-CN', { hour12: false })
-  dbRun('INSERT INTO nodes (parent_id,name,icon,content,created_at,sort_order) VALUES (NULL,?,?,?,?,' + nextRootOrder() + ')',
-    [path.basename(fp, path.extname(fp)), '🌐', stripHTML(fs.readFileSync(fp, 'utf-8')), now])
+  dbRun('INSERT INTO nodes (parent_id,name,icon,color,content,created_at,sort_order) VALUES (NULL,?,?,?,?,?,' + nextRootOrder() + ')',
+    [path.basename(fp, path.extname(fp)), '🌐', '', stripHTML(fs.readFileSync(fp, 'utf-8')), now])
   saveDocFile(); mainWindow.webContents.send('doc:reloaded')
   return { id: dbLastId() }
 })
