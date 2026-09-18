@@ -1,54 +1,58 @@
-# LimeTree
+# CedarLeaf
 
-LimeTree is a desktop tree-structure note-taking application built with Electron + Vue3 + TipTap, with menu structure and functionality aligned to CherryTree (based on CherryTree source code `ct_menu_ui.cc` and `ct_menu_actions.cc`).
+CedarLeaf is a lightweight desktop tree-structure note-taking application built with Electron + Vue3 + TipTap. All notes are stored locally in Markdown format, ensuring your data remains open, portable, and never locked into a proprietary format.
 
 ## Features
 
-### Menu Structure (aligned with CherryTree source code)
-- **File**: New Instance / Open File / Open Folder / Import (18 formats) / Export (PDF/HTML/TXT) / Save / Save As / Print / Preferences / Tree Info
-- **Edit**: Undo/Redo / Cut/Copy/Paste / Row Operations (Duplicate/Delete/Move Up/Move Down) / Table Operations / CodeBox Operations
-- **Insert**: Image / Table / CodeBox / Embedded File / Link / Anchor / TOC / Timestamp / Special Character / Horizontal Rule / Bullet List / Numbered List / Todo List
-- **Format**: Clone Format / Remove Format / Text Color / Background Color / Bold/Italic/Underline/Strikethrough/Monospace/Small/Subscript/Superscript / Heading H1-H6 / Change Case / Indent/Unindent / Justify
-- **Tools**: Spell Check / Execute Code / Strip Trailing Spaces / Replace Tabs / Command Palette
-- **Tree**: Add Node / Add Subnode / Duplicate / Node Properties / Bookmarks / Expand All / Collapse All / Move Up/Down/Left/Right / Sort / Delete
-- **Search**: Find in Node / Find in All Nodes / Find in Node Names / Find Next/Prev / Replace / Replace All
-- **View**: Show/Hide Tree / Toolbar / Statusbar / Node Name Header / Fullscreen / Always on Top / Zoom In/Out
-- **Bookmarks**: Add / Remove / Manage
-- **Help**: Check Update / Homepage / GitHub / Issues / About
+- **Tree Structure**: Unlimited hierarchical nodes with drag-and-drop sorting, copy/paste, and bookmarks
+- **Markdown Storage**: All notes saved as local `.md` files - openable in any text editor, version-controllable with Git
+- **Rich Editor**: WYSIWYG editing with images, tables, and code blocks (all resizable via drag)
+- **Screenshot Annotation**: Built-in screenshot tool with rectangle, ellipse, arrow, pen, text, numbering, and mosaic annotations. Annotations can be moved after placement.
+- **Long Screenshot**: Scroll capture and auto-stitch full-page screenshots
+- **Text Properties**: Font size slider (8-72px) with 8 preset colors and custom color picker
+- **Clipboard Integration**: Screenshots automatically copied to clipboard for easy pasting
+- **Privacy First**: All data stored locally, no registration required, no cloud sync
+- **Auto-save**: Configurable auto-save interval (default 2 minutes)
 
-### Custom Enhancements
-- **Resizable Images**: Drag corner handles to resize inserted images
-- **Resizable Tables**: Drag column borders to resize table columns
-- **Resizable Code Boxes**: Drag bottom-right corner to resize code box height
-- **Node Timestamps**: Each node displays creation date/time
-- **Markdown Storage**: Notes saved as `.md` files
-- **Search Dialog**: Full search with options (case match, whole word, regex, time filter, scope)
-- **Settings Dialog**: 12 categories matching CherryTree preferences
-- **Dark Mode**: Toggle between light and dark themes
+## File Storage Format
 
-### Toolbar (CherryTree TOOLBAR_VEC_DEFAULT layout)
-6 groups, 42 buttons: Add Node/Subnode | Back/Forward | Open/Save/Export | Search | Lists/Indent | Insert Elements | Format
+CedarLeaf stores all notes in a single Markdown file (default: `cedarleaf.md`), using HTML comments as metadata markers:
 
-## Tech Stack
-- **Electron** - Cross-platform desktop framework
-- **Vue 3** - Frontend framework
-- **TipTap** - Rich text editor (ProseMirror-based)
-- **sql.js** - SQLite database (in-browser)
-- **tiptap-markdown** - Markdown storage support
-- **Vite** - Build tool
+\`\`\`
+<!-- CedarLeaf Document -->
+<!-- lt:bookmarks [1,3] -->
 
-## Build
+<!-- lt:node {"id":1,"parent":0,"name":"My Notebook","icon":"📔"} -->
+# My Notebook
+Note content here...
 
-```bash
-npm install
-npm run build:vue
-npm run dist
-```
+<!-- lt:node {"id":2,"parent":1,"name":"Sub Node","icon":"📄"} -->
+## Sub Node
+Sub node content...
+\`\`\`
+
+This format ensures your data is always readable as plain text.
 
 ## Download
 
-Download from [Releases](../../releases).
+- **Installer**: [CedarLeaf.Setup.1.1.9.exe](https://github.com/cornelius150/Xm-CedarLeaf/releases/download/v2.1.0/CedarLeaf.Setup.1.1.9.exe) (~88 MB)
+- **Portable**: [CedarLeaf.1.1.9.exe](https://github.com/cornelius150/Xm-CedarLeaf/releases/download/v2.1.0/CedarLeaf.1.1.9.exe) (~87 MB)
+
+## Tech Stack
+
+- Electron 32 - Cross-platform desktop framework
+- Vue 3 - Frontend UI
+- TipTap - WYSIWYG editor
+- sql.js - In-memory database (runtime)
+- Markdown file - Data persistence
 
 ## License
 
 MIT
+
+## Links
+
+- **Official Website**: https://cornelius150.github.io/Xm-CedarLeaf/
+- **Online Manual**: https://cornelius150.github.io/Xm-CedarLeaf/docs.html
+- **Donate**: https://cornelius150.github.io/Xm-CedarLeaf/donate.html
+- **Bug Report**: https://github.com/cornelius150/Xm-CedarLeaf/issues
