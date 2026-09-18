@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>在线手册 - CedarLeaf</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">🌲 CedarLeaf</a>
+    <div class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="features.html">功能</a>
+      <a href="download.html">下载</a>
+      <a href="docs.html" class="active">在线手册</a>
+      <a href="donate.html">捐赠</a>
+      <a href="about.html">关于</a>
+    </div>
+  </div>
+</nav>
+
+<div style="height:60px;"></div>
+<section class="section">
+  <div class="container">
+    <h2>在线手册</h2>
+
+    <div class="doc-section">
+      <h3>1. 快速开始</h3>
+      <p>安装 CedarLeaf 后，双击桌面图标启动。首次打开为空白界面，可右键节点树创建第一个节点。</p>
+      <ol>
+        <li>右键节点树空白处 → 选择「新建节点」</li>
+        <li>输入节点名称，选择图标</li>
+        <li>在右侧编辑区输入笔记内容，支持 Markdown 语法</li>
+        <li>内容会自动保存（默认每 2 分钟）</li>
+      </ol>
+    </div>
+
+    <div class="doc-section">
+      <h3>2. 节点管理</h3>
+      <h4 style="color:#555;margin:12px 0 6px;">创建节点</h4>
+      <ul>
+        <li>右键节点树 → 新建节点（同级）</li>
+        <li>右键已有节点 → 新建子节点</li>
+        <li>选中节点按 <code>Ctrl+N</code> 新建同级节点</li>
+      </ul>
+      <h4 style="color:#555;margin:12px 0 6px;">移动节点</h4>
+      <ul>
+        <li>拖拽节点到目标父节点上即可移动</li>
+        <li>支持跨层级拖拽</li>
+      </ul>
+      <h4 style="color:#555;margin:12px 0 6px;">删除节点</h4>
+      <ul>
+        <li>右键节点 → 删除（含子节点会一并删除）</li>
+        <li>选中节点按 <code>Delete</code> 键</li>
+      </ul>
+      <h4 style="color:#555;margin:12px 0 6px;">书签</h4>
+      <ul>
+        <li>右键节点 → 添加/移除书签</li>
+        <li>书签列表显示在工具栏，点击快速跳转</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h3>3. 编辑器</h3>
+      <p>CedarLeaf 使用所见即所得编辑器，支持以下内容：</p>
+      <ul>
+        <li><strong>文本格式</strong>：标题、粗体、斜体、删除线、列表、引用、链接</li>
+        <li><strong>图片</strong>：粘贴或拖拽图片到编辑区，可拖拽四角缩放</li>
+        <li><strong>表格</strong>：插入表格，支持调整列宽和缩进</li>
+        <li><strong>代码框</strong>：插入代码块，支持语法高亮，可拖拽调整大小</li>
+        <li><strong>快捷键</strong>：<code>Ctrl+Z</code> 撤销，<code>Ctrl+Y</code> 重做，<code>Ctrl+S</code> 手动保存</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h3>4. 截图功能</h3>
+      <h4 style="color:#555;margin:12px 0 6px;">启动截图</h4>
+      <p>点击工具栏截图按钮，或菜单「编辑 → 截图」。截图时主窗口自动最小化到任务栏。</p>
+      <h4 style="color:#555;margin:12px 0 6px;">操作步骤</h4>
+      <ol>
+        <li>拖拽框选截图区域</li>
+        <li>选择标注工具进行标注</li>
+        <li>点击「✓ 完成」或双击选区 → 截图自动复制到剪贴板</li>
+        <li>点击「⬇ 下载」可保存到本地文件</li>
+      </ol>
+      <h4 style="color:#555;margin:12px 0 6px;">标注工具</h4>
+      <ul>
+        <li><strong>↖ 选择/移动</strong>：点中已有标注可拖动到新位置</li>
+        <li><strong>▭ 矩形</strong>：绘制矩形框</li>
+        <li><strong>◯ 椭圆</strong>：绘制椭圆/圆形</li>
+        <li><strong>➡ 箭头</strong>：绘制箭头</li>
+        <li><strong>✏ 画笔</strong>：自由涂鸦</li>
+        <li><strong>Ａ 文字</strong>：输入文字标注（弹出字号/颜色面板）</li>
+        <li><strong>① 序号</strong>：自动编号的圆形序号</li>
+        <li><strong>▦ 马赛克</strong>：模糊打码区域</li>
+      </ul>
+      <h4 style="color:#555;margin:12px 0 6px;">文字标注</h4>
+      <ul>
+        <li>选择文字工具后弹出属性面板</li>
+        <li>字号滑块：8 ~ 72px，实时显示数值</li>
+        <li>颜色：8 种预设色块 + 自定义取色器</li>
+        <li>输入后点画布空白处提交，自动切到选择模式可拖动文字</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h3>5. 长截图</h3>
+      <ol>
+        <li>框选截图区域</li>
+        <li>点击工具栏「⏳ 长截图」按钮</li>
+        <li>2 秒内点击要截取的目标窗口</li>
+        <li>软件自动滚动并逐屏截取</li>
+        <li>完成后长图自动复制到剪贴板</li>
+      </ol>
+    </div>
+
+    <div class="doc-section">
+      <h3>6. 数据存储</h3>
+      <h4 style="color:#555;margin:12px 0 6px;">文件格式</h4>
+      <p>所有笔记以 Markdown 文件存储在本地磁盘：</p>
+      <ul>
+        <li>默认路径：<code>%APPDATA%\CedarLeaf\cedarleaf.md</code></li>
+        <li>格式：标准 Markdown 文本 + 节点元数据注释</li>
+        <li>每个节点由 <code>&lt;!-- lt:node {...} --&gt;</code> 注释标记元数据</li>
+        <li>书签列表由 <code>&lt;!-- lt:bookmarks [...] --&gt;</code> 标记</li>
+      </ul>
+      <h4 style="color:#555;margin:12px 0 6px;">备份与迁移</h4>
+      <ul>
+        <li>复制 <code>cedarleaf.md</code> 文件即可完成备份</li>
+        <li>可用任意文本编辑器打开查看和编辑</li>
+        <li>可将文件复制到其他设备使用</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h3>7. 设置</h3>
+      <ul>
+        <li><strong>自动保存</strong>：默认 2 分钟，可在设置中修改间隔</li>
+        <li><strong>打开配置目录</strong>：菜单「帮助 → 打开配置文件夹」可快速访问数据文件</li>
+        <li><strong>全屏</strong>：按 <code>F11</code> 切换全屏编辑模式</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h3>8. 快捷键</h3>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+        <tr style="border-bottom:2px solid #e8f2ff;"><th style="text-align:left;padding:8px;">快捷键</th><th style="text-align:left;padding:8px;">功能</th></tr>
+        <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;"><code>Ctrl+N</code></td><td style="padding:8px;">新建节点</td></tr>
+        <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;"><code>Ctrl+S</code></td><td style="padding:8px;">手动保存</td></tr>
+        <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;"><code>Ctrl+Z</code></td><td style="padding:8px;">撤销</td></tr>
+        <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;"><code>Ctrl+Y</code></td><td style="padding:8px;">重做</td></tr>
+        <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;"><code>Ctrl+F</code></td><td style="padding:8px;">查找替换</td></tr>
+        <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;"><code>F1</code></td><td style="padding:8px;">在线手册</td></tr>
+        <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;"><code>F11</code></td><td style="padding:8px;">全屏切换</td></tr>
+        <tr><td style="padding:8px;"><code>Delete</code></td><td style="padding:8px;">删除选中节点</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p>CedarLeaf - 桌面树形笔记软件</p>
+    <p>MIT 开源协议 | <a href="https://github.com/cornelius150/Xm-CedarLeaf" target="_blank">GitHub</a> | <a href="donate.html">支持开发者</a></p>
+  </div>
+</footer>
+</body>
+</html>

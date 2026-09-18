@@ -1,12 +1,106 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LimeTree</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CedarLeaf - 桌面树形笔记软件</title>
+<meta name="description" content="CedarLeaf 是一款桌面树形笔记软件，支持 Markdown 格式存储、图片/表格/代码框拖拽缩放、截图标注与长截图功能">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">🌲 CedarLeaf</a>
+    <div class="nav-links">
+      <a href="index.html" class="active">首页</a>
+      <a href="features.html">功能</a>
+      <a href="download.html">下载</a>
+      <a href="docs.html">在线手册</a>
+      <a href="donate.html">捐赠</a>
+      <a href="about.html">关于</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>🌲 CedarLeaf</h1>
+  <p>轻量级桌面树形笔记软件，用 Markdown 记录一切</p>
+  <div class="hero-badges">
+    <span class="badge badge-blue">📂 树形结构管理</span>
+    <span class="badge badge-green">📝 Markdown 存储</span>
+    <span class="badge badge-orange">📸 截图标注</span>
+  </div>
+  <div style="margin-top:32px;display:flex;gap:12px;justify-content:center;">
+    <a href="download.html" class="btn btn-primary">立即下载</a>
+    <a href="https://github.com/cornelius150/Xm-CedarLeaf" target="_blank" class="btn btn-outline">查看源码</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2>核心特性</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">📂</div>
+        <h3>树形节点管理</h3>
+        <p>无限层级树形结构，拖拽排序、复制粘贴节点，支持书签收藏常用笔记</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📝</div>
+        <h3>Markdown 存储</h3>
+        <p>所有笔记以 Markdown 格式保存为本地文件，可自由编辑、版本管理、跨工具迁移</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📸</div>
+        <h3>截图标注</h3>
+        <p>内置截图工具，支持矩形、椭圆、箭头、画笔、文字、序号、马赛克标注，可移动调整</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📏</div>
+        <h3>长截图</h3>
+        <p>滚动截取整个页面内容，自动拼接为一张完整长图</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🖼️</div>
+        <h3>富内容编辑</h3>
+        <p>图片、表格、代码框均可拖拽缩放，所见即所得的编辑体验</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔒</div>
+        <h3>本地优先</h3>
+        <p>数据完全存储在本地，无需注册账号，无需联网，隐私安全有保障</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background:#f8fafd;">
+  <div class="container" style="text-align:center;">
+    <h2>为什么选择 CedarLeaf？</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:32px;margin-top:32px;text-align:left;">
+      <div>
+        <h3>📄 文件存储格式</h3>
+        <p>所有笔记数据以 Markdown 文件格式存储在本地磁盘，而非封闭的数据库格式。这意味着你可以：</p>
+        <ul style="padding-left:20px;color:#666;margin-top:8px;">
+          <li>用任意文本编辑器打开查看</li>
+          <li>用 Git 进行版本管理</li>
+          <li>轻松迁移到其他笔记工具</li>
+          <li>数据永远不会被锁定</li>
+        </ul>
+      </div>
+      <div>
+        <h3>⚡ 轻量高效</h3>
+        <p>基于 Electron 构建，安装包仅约 88MB，启动快速，资源占用低。无需注册、无需登录，安装即用。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p>CedarLeaf - 桌面树形笔记软件</p>
+    <p>MIT 开源协议 | <a href="https://github.com/cornelius150/Xm-CedarLeaf" target="_blank">GitHub</a> | <a href="docs.html">在线手册</a> | <a href="donate.html">支持开发者</a></p>
+  </div>
+</footer>
 </body>
 </html>
